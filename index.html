@@ -1,0 +1,2298 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>국가 메가프로젝트 전국 수자원 수급 안보 시뮬레이터</title>
+  
+  <!-- Google Fonts & FontAwesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* --------------------------------------------------
+       CSS VARIABLES & GLOBAL STYLES
+       -------------------------------------------------- */
+    :root {
+      --bg-dark: #0b0f19;
+      --bg-card: rgba(30, 41, 59, 0.45);
+      --bg-card-hover: rgba(30, 41, 59, 0.6);
+      --border-card: rgba(56, 189, 248, 0.15);
+      --border-card-active: rgba(56, 189, 248, 0.4);
+      
+      --color-primary: #38bdf8; /* 초순수 블루 */
+      --color-primary-glow: rgba(56, 189, 248, 0.4);
+      --color-success: #10b981; /* 안전 그린 */
+      --color-success-glow: rgba(16, 185, 129, 0.3);
+      --color-warning: #f59e0b; /* 주의 옐로우 */
+      --color-warning-glow: rgba(245, 158, 11, 0.3);
+      --color-danger: #ef4444; /* 위기 레드 */
+      --color-danger-glow: rgba(239, 68, 68, 0.3);
+      --color-accent: #a855f7; /* 투자 보라 */
+      
+      --font-display: 'Outfit', 'Noto Sans KR', sans-serif;
+      --font-mono: 'Fira Code', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 20% 20%, rgba(14, 165, 233, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, #090d16 0%, #03050a 100%);
+      background-attachment: fixed;
+      color: #f1f5f9;
+      font-family: var(--font-display);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(56, 189, 248, 0.2);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(56, 189, 248, 0.4);
+    }
+
+    /* --------------------------------------------------
+       LAYOUT STRUCTURE
+       -------------------------------------------------- */
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    header {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 30px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 20px;
+      position: relative;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .title-group h1 {
+      font-size: 2.1rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      background: linear-gradient(135deg, #ffffff 30%, var(--color-primary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+
+    .title-group p {
+      color: #94a3b8;
+      font-size: 0.95rem;
+      font-weight: 300;
+    }
+
+    .badge-container {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(4px);
+    }
+
+    .badge-live {
+      border-color: rgba(16, 185, 129, 0.3);
+      color: var(--color-success);
+    }
+
+    .badge-live::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background-color: var(--color-success);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--color-success);
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 0.6; }
+      50% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.6; }
+    }
+
+    /* --------------------------------------------------
+       DASHBOARD OVERVIEW METRICS
+       -------------------------------------------------- */
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 16px;
+      padding: 20px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .metric-card:hover {
+      transform: translateY(-2px);
+      background: var(--bg-card-hover);
+      border-color: rgba(56, 189, 248, 0.25);
+    }
+
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--accent-gradient, var(--color-primary));
+    }
+
+    .metric-card.success::before { --accent-gradient: var(--color-success); }
+    .metric-card.warning::before { --accent-gradient: var(--color-warning); }
+    .metric-card.danger::before { --accent-gradient: var(--color-danger); }
+    .metric-card.investment::before { --accent-gradient: var(--color-accent); }
+
+    .metric-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .metric-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      font-family: var(--font-display);
+      color: #ffffff;
+      line-height: 1;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .metric-value span {
+      font-size: 0.9rem;
+      font-weight: 400;
+      color: #64748b;
+    }
+
+    .metric-status {
+      font-size: 0.8rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* --------------------------------------------------
+       MAIN LAYOUT PANEL GRID
+       -------------------------------------------------- */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 24px;
+      margin-bottom: 30px;
+    }
+
+    @media (max-width: 1200px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 20px;
+      padding: 24px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.3s;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .panel-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .panel-title svg {
+      width: 20px;
+      height: 20px;
+      color: var(--color-primary);
+    }
+
+    /* --------------------------------------------------
+       MAP CANVAS DESIGN
+       -------------------------------------------------- */
+    .map-container {
+      position: relative;
+      width: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    canvas {
+      display: block;
+      max-width: 100%;
+      background: transparent;
+    }
+
+    .map-legend {
+      position: absolute;
+      bottom: 15px;
+      left: 15px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.75rem;
+      backdrop-filter: blur(4px);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+      color: #cbd5e1;
+    }
+
+    .legend-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .legend-color {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .legend-line {
+      width: 14px;
+      height: 3px;
+      display: inline-block;
+    }
+
+    /* --------------------------------------------------
+       SLIDERS & CONTROLS
+       -------------------------------------------------- */
+    .control-group {
+      margin-bottom: 20px;
+    }
+
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #e2e8f0;
+      margin-bottom: 8px;
+    }
+
+    .control-label span.value {
+      font-family: var(--font-mono);
+      color: var(--color-primary);
+      font-weight: 600;
+    }
+
+    .slider-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 9999px;
+      outline: none;
+      transition: background 0.3s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      box-shadow: 0 0 10px var(--color-primary-glow);
+      cursor: pointer;
+      transition: transform 0.1s, background-color 0.2s;
+      border: 2px solid #ffffff;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    /* Accent-specific slider colors */
+    .slider-hwacheon::-webkit-slider-thumb { background: #38bdf8 !important; }
+    .slider-dams::-webkit-slider-thumb { background: #10b981 !important; }
+    .slider-reuse::-webkit-slider-thumb { background: #a855f7 !important; }
+
+    .control-desc {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    /* --------------------------------------------------
+       REVERSE SIMULATOR COMPUTATION PANEL
+       -------------------------------------------------- */
+    .simulator-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .math-card {
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+
+    .math-formula {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: #93c5fd;
+      padding: 8px;
+      background: rgba(15, 23, 42, 0.7);
+      border-radius: 6px;
+      overflow-x: auto;
+      white-space: nowrap;
+      margin: 8px 0;
+      border-left: 3px solid var(--color-primary);
+    }
+
+    .output-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .output-item:last-child {
+      border-bottom: none;
+    }
+
+    .output-label {
+      font-size: 0.85rem;
+      color: #cbd5e1;
+    }
+
+    .output-value {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: #ffffff;
+      font-size: 1.05rem;
+    }
+
+    .output-value.highlight {
+      color: var(--color-primary);
+    }
+
+    .output-value.accent {
+      color: var(--color-accent);
+    }
+
+    /* --------------------------------------------------
+       TABS: FACT CHECK & FORMULA GUIDE
+       -------------------------------------------------- */
+    .bottom-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 20px;
+      padding: 24px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+      margin-bottom: 40px;
+    }
+
+    .tabs-header {
+      display: flex;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      margin-bottom: 20px;
+      gap: 8px;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      font-family: var(--font-display);
+    }
+
+    .tab-btn:hover {
+      color: #ffffff;
+    }
+
+    .tab-btn.active {
+      color: var(--color-primary);
+      font-weight: 600;
+    }
+
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: var(--color-primary);
+      box-shadow: 0 0 8px var(--color-primary-glow);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Regional Fact Sheets */
+    .fact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .fact-btn {
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 14px 18px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: #cbd5e1;
+      width: 100%;
+      font-family: var(--font-display);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .fact-btn:hover, .fact-btn.active {
+      background: rgba(56, 189, 248, 0.08);
+      border-color: rgba(56, 189, 248, 0.3);
+      color: #ffffff;
+    }
+
+    .fact-btn.active {
+      box-shadow: inset 0 0 10px rgba(56, 189, 248, 0.05);
+    }
+
+    .fact-details-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 16px;
+      min-height: 200px;
+    }
+
+    .fact-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 12px;
+      border-left: 3px solid var(--color-primary);
+      padding-left: 8px;
+    }
+
+    .fact-meta-item {
+      display: flex;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+    }
+
+    .fact-meta-label {
+      width: 140px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .fact-meta-value {
+      color: #cbd5e1;
+      flex: 1;
+    }
+
+    .fact-description {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.88rem;
+      color: #cbd5e1;
+      line-height: 1.6;
+    }
+
+    .fact-law-tag {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      display: inline-block;
+      margin-top: 8px;
+    }
+
+    /* Math Guide styling */
+    .formula-guide-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .formula-guide-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .guide-card {
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 18px;
+    }
+
+    .guide-card h4 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .guide-card h4::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 12px;
+      background: var(--color-accent);
+      border-radius: 2px;
+    }
+
+    .guide-card p {
+      font-size: 0.82rem;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    /* --------------------------------------------------
+       ICONS AND DECORATIONS
+       -------------------------------------------------- */
+    .icon-container {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      color: var(--color-primary);
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-action {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: var(--font-display);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-action:hover, .btn-action.active {
+      background: rgba(56, 189, 248, 0.12);
+      border-color: rgba(56, 189, 248, 0.4);
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
+    }
+
+    input[type="range"]:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    
+    input[type="range"]:disabled::-webkit-slider-thumb {
+      background: #475569 !important;
+      box-shadow: none !important;
+      cursor: not-allowed;
+      border: 2px solid #64748b !important;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .status-pill.safe {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      color: #34d399;
+    }
+
+    .status-pill.warning {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+    }
+
+    .status-pill.danger {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #f87171;
+    }
+
+    footer {
+      text-align: center;
+      color: #475569;
+      font-size: 0.75rem;
+      padding: 20px 0 40px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- HEADER -->
+    <header>
+      <div class="header-top">
+        <div class="title-group">
+          <h1>국가 메가프로젝트 전국 수자원 수급 안보 시뮬레이터</h1>
+          <p>National Mega-Project Water Security Interactive Simulator for Policy Practitioners</p>
+        </div>
+        <div class="badge-container">
+          <div class="badge badge-live">공식 정책 데이터 엔진 연동</div>
+          <div class="badge">수도정비기본계획(부분변경) 2차</div>
+          <div class="badge">2026 물계획 가이드라인</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- OVERVIEW STATS ROW -->
+    <div class="overview-grid">
+      <!-- Stat 1: Total Demand -->
+      <div class="metric-card investment" id="card-demand">
+        <div class="metric-title">메가프로젝트 총 용수 수요</div>
+        <div class="metric-value" id="val-total-demand">0<span> 톤/일</span></div>
+        <div class="metric-status">
+          <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/></svg>
+          용인 반도체 + 3대 권역 합산
+        </div>
+      </div>
+      
+      <!-- Stat 2: Total Supply -->
+      <div class="metric-card success" id="card-supply">
+        <div class="metric-title">정부 공급 대책 총량</div>
+        <div class="metric-value" id="val-total-supply">0<span> 톤/일</span></div>
+        <div class="metric-status">
+          <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M7.247 4.86l-4.796 5.481c-.566.647-.106 1.659.753 1.659h9.592a1 1 0 0 0 .753-1.659l-4.796-5.48a1 1 0 0 0-1.506 0z"/></svg>
+          기본 공급망 + 3대 추가대책
+        </div>
+      </div>
+
+      <!-- Stat 3: Net Balance -->
+      <div class="metric-card" id="card-balance">
+        <div class="metric-title">수자원 수급 안보 여유량 (Net Balance)</div>
+        <div class="metric-value" id="val-net-balance">0<span> 톤/일</span></div>
+        <div class="metric-status" id="val-balance-status">
+          <!-- Status pill goes here -->
+        </div>
+      </div>
+
+      <!-- Stat 4: Security Index -->
+      <div class="metric-card" id="card-security-index">
+        <div class="metric-title">수급 충족도 (Sufficiency Rate)</div>
+        <div class="metric-value" id="val-security-index">0%</div>
+        <div class="metric-status">
+          <span id="val-security-text">진단 대기 중</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN INTERACTIVE CONTAINER -->
+    <div class="main-grid">
+      
+      <!-- LEFT PANEL: MAP & MEASURES -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <div class="icon-container">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+            </div>
+            실시간 메가프로젝트 용수망 배정 캔버스 Map
+          </div>
+          <div class="header-controls">
+            <button class="btn-action" id="btn-toggle-particles">파티클 토글</button>
+            <button class="btn-action" id="btn-reset-sliders">초기화</button>
+          </div>
+        </div>
+        
+        <!-- Scenario Switcher -->
+        <div style="display: flex; gap: 10px; margin-bottom: 15px; background: rgba(15, 23, 42, 0.4); padding: 6px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
+          <button class="btn-action" id="scenario-current" style="flex: 1; justify-content: center; font-weight: 600;">현재 수급 현황 (기초 인프라)</button>
+          <button class="btn-action active" id="scenario-future" style="flex: 1; justify-content: center; font-weight: 600;">미래 완공 시나리오 (반도체/AI/대책 반영)</button>
+        </div>
+
+        <!-- Canvas Map -->
+        <div class="map-container">
+          <canvas id="mapCanvas" width="560" height="660"></canvas>
+          <div class="map-legend">
+            <div class="legend-item"><span class="legend-color" style="background:#38bdf8;box-shadow:0 0 6px #38bdf8;"></span> 취수원 (댐)</div>
+            <div class="legend-item"><span class="legend-color" style="background:#a855f7;box-shadow:0 0 6px #a855f7;"></span> 산업 단지 / AI 허브</div>
+            <div class="legend-item"><span class="legend-line" style="background:rgba(56,189,248,0.5)"></span> 연계 도수 관로망</div>
+            <div class="legend-item"><span class="legend-color" style="background:#60a5fa;scale:0.6"></span> 초순수 수동 유체 파티클</div>
+          </div>
+        </div>
+
+        <!-- Water Adequacy Controls -->
+        <div class="panel-header" style="margin-top: 24px; margin-bottom: 16px;">
+          <div class="panel-title" style="font-size: 1.1rem;">
+            <div class="icon-container" style="background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.2);color:var(--color-success)">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            국가 법정 계획 수급 충분성 검증기 (정부 정책 수단)
+          </div>
+        </div>
+        
+        <!-- Explanation Note for Policy Sliders -->
+        <div style="background: rgba(14, 165, 233, 0.05); border: 1px dashed rgba(56, 189, 248, 0.2); padding: 10px 12px; border-radius: 8px; font-size: 0.78rem; color: #94a3b8; line-height: 1.45; margin-bottom: 16px;">
+          💡 <strong>대책 진도율(%)의 의미:</strong> 각 수치의 백분율은 정부 국책 수자원 확보 대책의 <strong>이행 완공율(공정 진도율)</strong>을 뜻합니다. 기본 탑재된 수치(50%, 30%, 40%)는 대책이 추진 중인 가상 이행 단계를 나타낸 것이며, 슬라이더를 직접 좌우로 조절하여 <strong>"대책 완공(100%) 시 안보 확보 효과"</strong>와 <strong>"사업 지연(낮은 %) 시 물 부족 위기(블링킹 경보)"</strong>를 상호 대조 분석할 수 있습니다.
+        </div>
+
+        <div class="control-group">
+          <div class="control-label">
+            <span>① 화천댐 발전 방류수 다목적 전환</span>
+            <span class="value" id="label-hwacheon">0%</span>
+          </div>
+          <div class="slider-wrapper">
+            <input type="range" id="slide-hwacheon" class="slider-hwacheon" min="0" max="100" value="50">
+          </div>
+          <div class="control-desc">발전전용 방류수를 한강 수계 다목적 용수로 전용 (최대 일 76.2만 톤 확보)</div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-label">
+            <span>② 신설 기후대응댐 수혜 (14개소)</span>
+            <span class="value" id="label-dams">0%</span>
+          </div>
+          <div class="slider-wrapper">
+            <input type="range" id="slide-dams" class="slider-dams" min="0" max="100" value="30">
+          </div>
+          <div class="control-desc">홍수 조절 및 가뭄 대응용 14개 기후대응댐 신설을 통한 공급 (최대 일 40.0만 톤 확보)</div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-label">
+            <span>③ 하수 재이용 고도화 용수 공급</span>
+            <span class="value" id="label-reuse">0%</span>
+          </div>
+          <div class="slider-wrapper">
+            <input type="range" id="slide-reuse" class="slider-reuse" min="0" max="100" value="40">
+          </div>
+          <div class="control-desc">하수처리수 공업용수 재이용률 제고 및 고도 정화공정 도입 (최대 일 30.0만 톤 확보)</div>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL: SEMICONDUCTOR FAB SIMULATOR & CALCULATIONS -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <div class="icon-container" style="background:rgba(168,85,247,0.1);border-color:rgba(168,85,247,0.2);color:var(--color-accent)">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+            </div>
+            800조 첨단 산단 투자-생산-용수 연계 역산 시뮬레이터
+          </div>
+        </div>
+
+        <div class="simulator-grid">
+          <!-- Input Sliders -->
+          <div class="control-group">
+            <div class="control-label">
+              <span>반도체/첨단산업 기업 총 투자 금액</span>
+              <span class="value" id="label-invest" style="color:var(--color-accent)">0 조 원</span>
+            </div>
+            <div class="slider-wrapper">
+              <input type="range" id="slide-invest" min="100" max="1200" step="50" value="800">
+            </div>
+            <div class="control-desc">용인 및 서남권 메가클러스터 예정 총 기업 투자 유치액 (목표 800조)</div>
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>팹(Fab) 1개당 평균 건설 및 공정 설비비</span>
+              <span class="value" id="label-fab-cost" style="color:var(--color-accent)">0 조 원</span>
+            </div>
+            <div class="slider-wrapper">
+              <input type="range" id="slide-fab-cost" min="10" max="50" step="2" value="30">
+            </div>
+            <div class="control-desc">최첨단 팹(클린룸 및 노광장비 포함) 1개소당 소요 금액</div>
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>3nm 이하 미세 공정 레이어(L) 수</span>
+              <span class="value" id="label-layers">0 L</span>
+            </div>
+            <div class="slider-wrapper">
+              <input type="range" id="slide-layers" min="50" max="220" step="10" value="130">
+            </div>
+            <div class="control-desc">웨이퍼 1장에 그려지는 나노급 공정 적층 레이어 개수 (적층 증가 시 물 소비 비례 증가)</div>
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>초순수(Ultrapure Water) 회수율</span>
+              <span class="value" id="label-recovery">0%</span>
+            </div>
+            <div class="slider-wrapper">
+              <input type="range" id="slide-recovery" min="50" max="95" step="5" value="75">
+            </div>
+            <div class="control-desc">사용된 초순수의 고도 여과 후 팹 내부 공정 재투입 비율 (회수율 제고는 물 부담을 획기적으로 낮춤)</div>
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>유틸리티 용수 및 기타 가산치</span>
+              <span class="value" id="label-utility">0%</span>
+            </div>
+            <div class="slider-wrapper">
+              <input type="range" id="slide-utility" min="10" max="50" step="5" value="30">
+            </div>
+            <div class="control-desc">냉각탑, 가스 스크러버, 보일러 메이크업 등 지원 시설에 추가되는 가산 비율</div>
+          </div>
+
+          <!-- Calculated Intermediate Metrics -->
+          <div class="math-card">
+            <div style="font-size:0.9rem; font-weight:600; color:#fff; margin-bottom:12px;">메가프로젝트 시설 구축 및 용수 역산 결과</div>
+            
+            <!-- Fabs -->
+            <div class="output-item">
+              <span class="output-label">반도체 제조 팹(Fab) 수 <small style="color:#64748b;">(투자 70% 배정)</small></span>
+              <span class="output-value accent" id="calc-fabs">0 개소</span>
+            </div>
+            
+            <!-- Data Centers -->
+            <div class="output-item">
+              <span class="output-label">고성능 AI 데이터센터 수 <small style="color:#64748b;">(투자 15% 배정)</small></span>
+              <span class="output-value accent" id="calc-datacenters">0 개소</span>
+            </div>
+            
+            <!-- R&D centers -->
+            <div class="output-item">
+              <span class="output-label">피지컬 AI 및 첨단 R&D 거점 수 <small style="color:#64748b;">(투자 15% 배정)</small></span>
+              <span class="output-value accent" id="calc-rd-hubs">0 개소</span>
+            </div>
+            
+            <!-- Wafer Production -->
+            <div class="output-item">
+              <span class="output-label">월간 예상 웨이퍼 생산량</span>
+              <span class="output-value" id="calc-wafers">0 Wafer/월</span>
+            </div>
+            
+            <!-- Chip footprint -->
+            <div class="output-item">
+              <span class="output-label">반도체 칩 1개당 소요 용수 원단위</span>
+              <span class="output-value highlight" id="calc-chip-footprint">0.00 Liters/chip</span>
+            </div>
+
+            <!-- Breakdown Water Demand -->
+            <div style="margin-top: 10px; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 10px; font-size:0.78rem; color:#94a3b8;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                <span>└ 반도체 공정/초순수 수량:</span>
+                <span id="calc-water-fabs" style="font-family:var(--font-mono); color:#cbd5e1;">0 만 톤/일</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                <span>└ AI 데이터센터 냉각 수량:</span>
+                <span id="calc-water-dc" style="font-family:var(--font-mono); color:#cbd5e1;">0 만 톤/일</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                <span>└ R&D 및 기타 유틸리티 수량:</span>
+                <span id="calc-water-rd" style="font-family:var(--font-mono); color:#cbd5e1;">0 만 톤/일</span>
+              </div>
+            </div>
+
+            <!-- Total cluster demand -->
+            <div class="output-item" style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 8px; padding-top: 8px;">
+              <span class="output-label" style="font-weight:600;">용인 클러스터 총 용수 수요량</span>
+              <span class="output-value highlight" id="calc-cluster-demand" style="font-size:1.15rem;">0 만 톤/일</span>
+            </div>
+          </div>
+
+          <!-- Equation Box -->
+          <div class="math-card" style="margin-top:0;">
+            <div style="font-size:0.8rem; font-weight:600; color:#94a3b8; display:flex; justify-content:space-between; align-items:center;">
+              <span>임베딩 공학 방정식</span>
+              <span style="font-size:0.7rem; color:var(--color-primary);">System Mass Balance Model</span>
+            </div>
+            <div class="math-formula">
+              Q_demand = N_fab * Q_fab_base * (L / 100) * ((1 - R_upw) / 0.25) * ((1 + U) / 1.30)
+            </div>
+            <p style="font-size:0.75rem; color:#64748b;">
+              ※ 팹 수(N_fab)와 적층 수(L)에 비례하며, 초순수 회수율(R_upw)이 높을수록 일일 수요량이 줄어드는 연쇄 역산 역학이 성립합니다. (기본값: 1팹당 일 4.5만 톤 표준소비 적용)
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- BOTTOM ROW: FACT SHEETS & FORMULA REFERENCE -->
+    <div class="bottom-section">
+      <div class="tabs-header">
+        <button class="tab-btn active" onclick="switchTab('tab-factcheck')">권역별 상세 팩트체크 시트</button>
+        <button class="tab-btn" onclick="switchTab('tab-formulas')">수식 가이드 & 수지 균형</button>
+      </div>
+
+      <!-- TAB 1: FACT CHECK SHEET -->
+      <div id="tab-factcheck" class="tab-content active">
+        <div style="margin-bottom: 16px; font-size: 0.9rem; color: #94a3b8;">
+          국회입법조사처 공식 검토 수치와 특별대책지역의 법적 규제 사항을 매칭하는 인터랙티브 가이드입니다. 권역을 선택해 확인하세요.
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 240px 1fr; gap: 20px;">
+          <div style="display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto; padding-right: 4px; width: 240px;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--color-accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; padding-left: 4px;">메가프로젝트 소비 거점</div>
+            <button class="fact-btn active" id="btn-fact-yongin" onclick="showFact('yongin', this)">
+              <span>수도권 (용인 클러스터)</span>
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+            <button class="fact-btn" id="btn-fact-chungcheongHub" onclick="showFact('chungcheongHub', this)">
+              <span>충청권 (이차전지/바이오)</span>
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+            <button class="fact-btn" id="btn-fact-honamHub" onclick="showFact('honamHub', this)">
+              <span>서남권 (호남 AI 센터)</span>
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+            <button class="fact-btn" id="btn-fact-yeongnamHub" onclick="showFact('yeongnamHub', this)">
+              <span>영남권 (미래 모빌리티/AI)</span>
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+            
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--color-primary); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 12px; margin-bottom: 4px; padding-left: 4px;">주요 수자원 공급 취수원 (댐)</div>
+            <button class="fact-btn" id="btn-fact-hwacheon" onclick="showFact('hwacheon', this)">
+              <span>화천댐 (북한강 수계)</span>
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+            <button class="fact-btn" id="btn-fact-soyanggang" onclick="showFact('soyanggang', this)">
+              <span>소양강댐 (북한강 지류)</span>
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+            <button class="fact-btn" id="btn-fact-paldang" onclick="showFact('paldang', this)">
+              <span>팔당댐 (한강 본류)</span>
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+            <button class="fact-btn" id="btn-fact-chungju" onclick="showFact('chungju', this)">
+              <span>충주댐 (남한강 수계)</span>
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+            <button class="fact-btn" id="btn-fact-daecheong" onclick="showFact('daecheong', this)">
+              <span>대청댐 (금강 수계)</span>
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+            <button class="fact-btn" id="btn-fact-yongdam" onclick="showFact('yongdam', this)">
+              <span>용담댐 (금강 상류)</span>
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+            <button class="fact-btn" id="btn-fact-andong" onclick="showFact('andong', this)">
+              <span>안동댐 (낙동강 수계)</span>
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+            <button class="fact-btn" id="btn-fact-imha" onclick="showFact('imha', this)">
+              <span>임하댐 (낙동강 지류)</span>
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+            <button class="fact-btn" id="btn-fact-hapcheon" onclick="showFact('hapcheon', this)">
+              <span>합천댐 (황강 수계)</span>
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+            <button class="fact-btn" id="btn-fact-juam" onclick="showFact('juam', this)">
+              <span>주암댐 (섬진강 수계)</span>
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+
+            <div style="font-size: 0.8rem; font-weight: 700; color: #e2e8f0; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 12px; margin-bottom: 4px; padding-left: 4px;">수위 조절 보 (보 인프라)</div>
+            <button class="fact-btn" id="btn-fact-yeojubo" onclick="showFact('yeojubo', this)">
+              <span>여주보 (한강 수계)</span>
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+            <button class="fact-btn" id="btn-fact-sejongbo" onclick="showFact('sejongbo', this)">
+              <span>세종·공주보 (금강 수계)</span>
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+            <button class="fact-btn" id="btn-fact-gangjeongbo" onclick="showFact('gangjeongbo', this)">
+              <span>강정고령보 (낙동강 수계)</span>
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+            <button class="fact-btn" id="btn-fact-seungchonbo" onclick="showFact('seungchonbo', this)">
+              <span>승촌보 (영산강 수계)</span>
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+          </div>
+
+          <div class="fact-details-card" id="fact-details-box">
+            <!-- Dynamically Loaded Content -->
+            <div class="fact-title" id="fact-title">수도권 (용인 반도체 클러스터)</div>
+            
+            <div class="fact-meta-item">
+              <span class="fact-meta-label">공식 요구 용수량:</span>
+              <span class="fact-meta-value">일 120.0만 톤 (2035년 최종 완료 기준)</span>
+            </div>
+            <div class="fact-meta-item">
+              <span class="fact-meta-label">주요 공급 취수원:</span>
+              <span class="fact-meta-value">팔당댐 하천수 (여유량), 화천댐 다목적 발전 방류수 (실제 전환)</span>
+            </div>
+            <div class="fact-meta-item">
+              <span class="fact-meta-label">핵심 정책 애로사항:</span>
+              <span class="fact-meta-value" style="color:var(--color-warning);">도수 관로 복선화 지연 시 관로 파손에 따른 전 팹 가동 중단(셧다운) 위기 상존</span>
+            </div>
+            <div class="fact-meta-item">
+              <span class="fact-meta-label">적용 법적 규제:</span>
+              <span class="fact-meta-value">
+                한강수계 수질보전 특별대책지역 지정 고시 제1권역 규제, 수도법 제7조(상수원보호구역 내 행위 금지)
+              </span>
+            </div>
+            
+            <div class="fact-law-tag">팔당 특별대책지역 제1권역 저촉 우려</div>
+            
+            <div class="fact-description" id="fact-desc">
+              용인 반도체 국가산단은 일 120만 톤의 방대한 유량이 공급되어야 하는 국가 전략 심장부입니다. 국회입법조사처의 공식 검토 보고서에 따르면, 팔당댐의 가용 용수가 한계에 달해 강원도 화천댐의 발전 방류수를 다목적 수자원으로 용도 전환(일 76.2만 톤)하는 대책이 최초로 수립되었습니다. 하지만 남한강 and 북한강에서 용인까지 이어지는 관로 건설이 가밀화 구역을 통과해야 하며, 수도법 상의 환경영향평가 및 규제 매칭 리스크가 잔존하고 있어 정책 진도율 모니터링이 필수적입니다.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: FORMULA GUIDE -->
+      <div id="tab-formulas" class="tab-content">
+        <div class="formula-guide-grid">
+          
+          <div class="guide-card">
+            <h4>1. 산업 용수 역산 메커니즘 (Industrial Water Back-Calculation)</h4>
+            <p style="margin-bottom: 12px;">
+              기업의 투자 유치금액을 기준으로 반도체 생산 용수를 도출하기 위해, 물리학적 질량 수지(Mass Balance) 공식을 임베딩하였습니다.
+            </p>
+            <div class="math-formula">
+              N_fabs = Investment_Total / Average_Fab_Cost
+            </div>
+            <p style="margin-bottom: 8px;">
+              팹 1개소당 대략 월 100,000장의 Wafer 처리를 기준으로 하며, 반도체 웨이퍼 세정 공정에서 층수가 올라갈 때마다 초순수 사용량은 적층 계수(Layer/100)에 따라 선형 비례합니다.
+            </p>
+            <div class="math-formula">
+              Q_fab = Q_base * (L / 100) * (1 - Recovery_Rate) * (1 + Utility_Factor)
+            </div>
+            <p>
+              초순수 회수율을 75%에서 90%로 고도화할 경우, 실제 가공에 필요한 용수 보충량은 대폭 감소합니다.
+            </p>
+          </div>
+
+          <div class="guide-card">
+            <h4>2. 수급 안보 안전성 진단 (Security Index Evaluation)</h4>
+            <p style="margin-bottom: 12px;">
+              정부의 3대 핵심 특별 대책(화천댐 전환, 기후대응 신설댐, 하수 재이용 고도화)의 합산 공급량과 클러스터별 실시간 수요량의 비율을 통해 안보 지수를 판정합니다.
+            </p>
+            <div class="math-formula">
+              Sufficiency_Rate (%) = (Total_Supply / Total_Demand) * 100
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px; margin-top:10px; font-size:0.8rem;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="status-pill safe" style="width:60px; justify-content:center;">안전</span>
+                <span style="color:#cbd5e1;">충족율 100% 이상: 현재 계획 수단으로 수급 차질 우려 없음.</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="status-pill warning" style="width:60px; justify-content:center;">주의</span>
+                <span style="color:#cbd5e1;">충족율 90% ~ 100%: 국지적 물 스트레스 또는 비상시 가뭄 피해 노출 가능.</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="status-pill danger" style="width:60px; justify-content:center;">위기</span>
+                <span style="color:#cbd5e1;">충족율 90% 미만: 팹 가동 제한 또는 비상 제한 급수 불가피 단계.</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+      대한민국 환경부 · 국토교통부 · 한국수자원공사(K-water) 실무 대시보드 시뮬레이터<br>
+      © 2026 국가 메가프로젝트 전국 수자원 수급 안보 시뮬레이션 시스템. All Rights Reserved.
+    </footer>
+
+  </div>
+
+  <!-- --------------------------------------------------
+       JAVASCRIPT SIMULATOR LOGIC & CANVAS ENGINE
+       -------------------------------------------------- -->
+  <script>
+    // Region Data for Fact Checks
+    const factSheets = {
+      yongin: {
+        title: "수도권 (용인 반도체 메가 클러스터)",
+        demand: "일 120.0만 톤 (2035년 최종 완료 기준)",
+        sources: "팔당댐 하천수 (여유량), 화천댐 다목적 발전 방류수 (실제 전환)",
+        risk: "도수 관로 복선화 지연 시 관로 파손에 따른 전 팹 가동 중단(셧다운) 위기 상존",
+        law: "한강수계 수질보전 특별대책지역 지정 고시 제1권역 규제, 수도법 제7조(상수원보호구역 내 행위 금지)",
+        tag: "팔당 특별대책지역 제1권역 저촉 우려",
+        desc: "용인 반도체 국가산단은 일 120만 톤의 방대한 유량이 공급되어야 하는 국가 전략 심장부입니다. 국회입법조사처의 공식 검토 보고서에 따르면, 팔당댐의 가용 용수가 한계에 달해 강원도 화천댐의 발전 방류수를 다목적 수자원으로 용도 전환(일 76.2만 톤)하는 대책이 최초로 수립되었습니다. 하지만 남한강과 북한강에서 용인까지 이어지는 관로 건설이 가밀화 구역을 통과해야 하며, 수도법 상의 환경영향평가 및 규제 매칭 리스크가 잔존하고 있어 정책 진도율 모니터링이 필수적입니다."
+      },
+      chungcheongHub: {
+        title: "충청권 (이차전지/바이오 클러스터)",
+        demand: "일 40.0만 톤 (청주, 오창, 천안 거점 합산)",
+        sources: "충주댐, 대청댐 및 인근 하수 처리수 재이용",
+        risk: "대청댐 환경정화구역 및 상수원 보호구역 인접으로 인한 방류수 농도 추가 완충 필요",
+        law: "금강수계 물관리 및 주민지원 등에 관한 법률, 수질보전 특별대책지역 지정 고시",
+        tag: "대청호 규제 완화 및 입지 분쟁 규제",
+        desc: "충청 첨단 산단은 오창 이차전지와 청주 오송 바이오 거점을 중심으로 물 수요가 팽창하고 있습니다. 대청댐 수질보전특별대책지역 내에 위치해 있어 오염물질 무방류 시스템 구축 압박을 크게 받습니다. 대청댐으로부터 도수되는 관로망 용량은 충족되나, 충주댐과 대청댐의 저수량이 역대 가뭄 시 한계에 직면했던 점을 감안하여 대책 진도율에 하수가 고도 재이용수가 주요하게 배정되어 가중치를 시뮬레이션해야 합니다."
+      },
+      honamHub: {
+        title: "서남권 (호남 AI 및 첨단 농생명 허브)",
+        demand: "일 30.0만 톤 (주암댐 수계 거점)",
+        sources: "주암댐, 동복호 및 하구둑 해수담수화/재이용 수단",
+        risk: "갈수기 주암댐 고갈 빈도 급증으로 가뭄에 가장 취약한 도수 인프라 리스크",
+        law: "영산강·섬진강수계 물관리 및 주민지원 등에 관한 법률",
+        tag: "주암댐 저수위 도달에 따른 공업용수 제한 리스크",
+        desc: "호남권 AI 반도체 및 국가전략산단은 국내에서 가뭄 주기가 가장 빠르게 짧아지고 있는 섬진강/주암댐 계통에 수급을 의존하고 있습니다. 주암댐 저수율이 10%대로 떨어질 경우, 순천/광양 공업용수와 광주 생활용수가 충돌하게 됩니다. 이에 따라 영산강 수계 하수 고도 재이용망 및 기후대응 신설댐(호남권 신설댐 수혜 포함)의 진도율이 서남권 물 안보 여유량을 가르는 결정적 요인이 됩니다."
+      },
+      yeongnamHub: {
+        title: "영남권 (미래 모빌리티 및 AI 로봇 단지)",
+        demand: "일 50.0만 톤 (대구·울산·창원 국가전략산단)",
+        sources: "안동댐, 합천댐, 낙동강 본류 고도 정화수",
+        risk: "낙동강 수계 미량 유해물질 유입에 따른 공업용 정밀 정수비용 급증 리스크",
+        law: "낙동강수계 물관리 및 주민지원 등에 관한 법률, 하천법",
+        tag: "낙동강 취수원 다변화 및 맑은물 상생 협정",
+        desc: "영산강/낙동강 권역 중 영남 첨단 산업 벨트는 낙동강 본류 수질 사고 시 공업용수 품질 확보에 위기가 발생합니다. 초순수 팹 공정 원료 확보를 위해 상류 안동댐 직도수망 검토와 울산 해수담수화 설비의 연계가 요구됩니다. 기후대응댐 신설 대책 중 낙동강 유역 지류 댐들이 적기에 가동될 때 유량 안보 및 희석 유량이 보장되어 수질 안전 리스크를 최소화할 수 있습니다."
+      },
+      hwacheon: {
+        title: "화천댐 (북한강 수계 - 발전방류수 다목적 전환원)",
+        supply: "최대 일 76.2만 톤 확보 가능 (정책 진도율 100% 달성 시)",
+        destinations: "팔당댐 유입 후 도수관로를 통해 용인 반도체 클러스터로 공급",
+        risk: "강원 지역 주민의 하류 물 배정에 대한 반발 및 한강 발전방류량 감소에 따른 전력계통 영향",
+        law: "수도법 제7조(상수원보호구역 지정), 하천법에 의거한 발전용수 하천수 사용허가 변경",
+        tag: "한강 수계 다목적 용수 전환 핵심 대책",
+        desc: "화천댐은 원래 전력 생산만을 담당하는 발전전용 댐이었으나, 한강수계 물 부족 심화에 따라 발전 방류수를 다목적 수자원으로 전환하여 공급을 확보하는 최초의 초광역 정책 모델로 지정되었습니다. 진도율 슬라이더를 올리면 공급 용수가 늘어납니다."
+      },
+      soyanggang: {
+        title: "소양강댐 (북한강 지류 - 국내 최대 다목적 댐)",
+        supply: "일 120.0만 톤 수준 (한강 수계 용량 조절 핵심)",
+        destinations: "수도권 생활용수 및 한강 본류 환경유량 보존",
+        risk: "기후변화로 인한 강수량 불균형으로 역대 최저 저수위 도달 시 방류 차단 가능성",
+        law: "댐건설관리법 및 상수원 수질 관리 조례",
+        tag: "한강 수계 최대 저수 인프라",
+        desc: "소양강댐은 대한민국에서 가장 큰 사력댐으로 한강 수계의 전체 수량을 통제하고 기후 변화 가뭄 시기에 팔당댐 하류의 방류 유량을 유지하는 가장 거대한 수자원 최후의 방어선입니다."
+      },
+      paldang: {
+        title: "팔당댐 (한강 본류 - 수도권 공업용수 심장부)",
+        supply: "일 100.0만 톤 이상 (수도권 동부 최대 하천 취수 거점)",
+        destinations: "서울/경인 생활용수, 삼성 평택 캠퍼스 및 용인 반도체 클러스터 기초 용수",
+        risk: "기존 가용량이 한계에 달해 추가 공급 여유가 고갈되었으며, 극심한 가뭄 시 수계 전체 위기 확산 우려",
+        law: "수질보전 특별대책지역 지정 고시 제1권역, 한강수계 관리법",
+        tag: "수도권 용수 공급 포화 상태 거점",
+        desc: "팔당댐은 수도권 생활 및 공업용수의 핵심 기지이나 개발이 집중되며 추가 용수 여유가 없는 한계점에 봉착했습니다. 용인 산단 완공 시 요구되는 대량의 용수를 단독으로 공급할 수 없어 강원도 상류 댐들과의 관로 분리가 시급한 당면 과제입니다."
+      },
+      chungju: {
+        title: "충주댐 (남한강 수계 - 기후대응 예비 보완원)",
+        supply: "일 40.0만 톤 수준 연계 계획 (댐 신설 및 연계망 확보 시)",
+        destinations: "남한강 수계 하류 보충 및 용인 반도체 클러스터 비상 백업 공급망",
+        risk: "남한강 수계 주변 시·군의 가뭄 발생 시 지역 배분 우선순위 갈등 리스크",
+        law: "댐건설관리법, 상수원 특별대책지역 고시",
+        tag: "기후대응 14개소 신설댐 보완 수혜 거점",
+        desc: "충주댐은 대한민국 최대의 다목적 댐으로 한강 수계의 안정성을 담당합니다. 기후대응 댐 14곳 신설 계획이 가동될 때 발생하는 여유 수량을 남한강 계통을 통해 용인 클러스터와 충청권 북부로 유입할 수 있는 복선 배관망이 계획되어 있습니다."
+      },
+      daecheong: {
+        title: "대청댐 (금강 수계 - 충청 첨단 벨트 공급원)",
+        supply: "일 40.0만 톤 (금강 수계 가용 취수 배정)",
+        destinations: "대전, 청주 오송 바이오 벨트 및 오창 이차전지 산업단지",
+        risk: "대청호 수질 특별대책지역 내에 위치해 있어 방류 오염물질에 대한 환경 단체의 엄격한 감시 및 규제",
+        law: "금강수계 물관리 및 주민지원 등에 관한 법률, 상수원 보호법",
+        tag: "충청 첨단 산단 공급 특화 댐",
+        desc: "대청댐은 금강 유역 첨단 산업의 생명줄입니다. 대청댐 특별대책지역 내 수질 관리가 엄격하기 때문에 반도체 팹 등에서 방출되는 공정 유체의 무방류 순환 시스템이나 환경 영향 완화 기술 개발이 필수적으로 수반되는 거점입니다."
+      },
+      yongdam: {
+        title: "용담댐 (금강 상류 - 대청호 비상 보충원)",
+        supply: "일 30.0만 톤 (금강 유역 수량 보완용)",
+        destinations: "금강 본류 방류 지원 및 충청 첨단 산단 간접 지원",
+        risk: "가뭄 시 도수 터널 용량 제한 및 하류 전북 지역과의 수량 배분 갈등 리스크",
+        law: "하천법 및 금강 수계 공동 운영 협정",
+        tag: "금강 유역 최상류 예비 댐",
+        desc: "용담댐은 금강 최상류에 위치하여 대청댐 유량이 감소할 때 보조 물줄기를 방류해 금강 수계의 수위를 유지해 주는 든든한 백업 역할을 담당합니다."
+      },
+      andong: {
+        title: "안동댐 (낙동강 수계 상류 - 영남권 수질 안전망)",
+        supply: "일 50.0만 톤 (낙동강 상류 청정 수계 공급 예비량)",
+        destinations: "대구·울산·창원 국가전략산단 및 미래 모빌리티 벨트",
+        risk: "낙동강 하류 본류의 미량 유해물질 유출 사고 우회를 위한 상류 직도수망 구축 비용 갈등",
+        law: "낙동강수계법, 하천법 및 상수원 특별법",
+        tag: "영남권 취수 다변화 및 수질 정화 예비원",
+        desc: "안동댐은 낙동강 상류의 청정 원천수를 보유하고 있습니다. 낙동강 하류의 잦은 수질 사고로부터 초순수 공정을 지키기 위해 영남권 AI/로봇 단지에 직도수 연계망을 구상하는 등 취수 다변화 정책의 메인 허브 역할을 하고 있습니다."
+      },
+      imha: {
+        title: "임하댐 (낙동강 지류 - 안동-임하 통합 용수원)",
+        supply: "일 40.0만 톤 통합 연계 (안동댐 연결 도수망 확보 시)",
+        destinations: "낙동강 본류 수질 보완 및 대구/경북 공업 벨트",
+        risk: "유입 토사량이 많아 가뭄 직후 강수 발생 시 탁수 방류 장기화 우려",
+        law: "낙동강수계법 및 댐연계운영 지침",
+        tag: "낙동강 동부 최대 다목적 댐",
+        desc: "임하댐은 안동댐과 연계 도수터널로 묶여 공동 운영되는 댐으로, 영남권 산단에 가뭄 상황에서도 안정적인 수량을 확보할 수 있게 돕는 조절 댐입니다."
+      },
+      hapcheon: {
+        title: "합천댐 (황강 수계 - 영남 수질사고 백업원)",
+        supply: "일 35.0만 톤 가량 취수 다변화 (황강 광역도수망 건설 시)",
+        destinations: "부산/경남 및 영남 첨단 모빌리티 산단 대체 취수",
+        risk: "황강 유역 농업 단지 주민들의 지하수 수위 저하 우려 및 방류 취수 반대 민원",
+        law: "낙동강 취수원 다변화 특별 협정 법안",
+        tag: "황강 청정 원수 취수 다변화 핵심",
+        desc: "합천댐은 낙동강 본류가 오염되었을 때 지류인 황강의 깨끗한 원수를 대안으로 취수하기 위해 논의되는 댐으로 수질이 탁월하여 영남권 첨단 IT 공정에 필수적 예비원입니다."
+      },
+      juam: {
+        title: "주암댐 (섬진강 수계 - 호남 공업 용수 기지)",
+        supply: "일 30.0만 톤 (서남권 AI 및 광양만권 전략산업 공급)",
+        destinations: "호남 AI 허브, 여수/광양 석유화학 및 철강 산단",
+        risk: "남부지방 극심한 가뭄 발생 시 빈번한 저수위 고갈 현상 및 제한 급수 우려",
+        law: "영산강·섬진강수계법, 환경부 상수원보호 조례",
+        tag: "갈수기 저수율 고갈 리스크 노출 거점",
+        desc: "주암댐은 호남 산단의 생명줄이나 기후변화로 남부지방 가뭄 피해가 빈발하여 물 안보에 비상이 켜진 댐입니다. 영산강 수계의 하수 고도 재이용 및 해수 담수화 대책 진도율이 올라가야 주암댐의 물 안보 여유량이 보존될 수 있습니다."
+      },
+      yeojubo: {
+        title: "여주보 (한강 본류 - 수도권 용수 수위 조절 보)",
+        supply: "총 저수용량 약 1,300만 톤 규모의 상시 수위 유지",
+        destinations: "여주/이천 반도체 공업 배후단지 및 하류 팔당댐 유량 조절",
+        risk: "보 개방 수위 변경 정책에 따른 하천 유량 변화 및 농업/공업 지하수 취수 제한 리스크",
+        law: "하천법 및 보 연계 운영 가이드라인",
+        tag: "한강 수계 3대 보 중 핵심 수량 완충재",
+        desc: "여주보는 여주/이천 권역의 풍부한 하천 수위를 확보하여 인근 IT 벨트에 생활/공업 용수를 간접 공급하며 하류 팔당댐에 유입되는 한강 본류 유량을 미세 조절합니다."
+      },
+      sejongbo: {
+        title: "세종·공주보 (금강 본류 - 세종/충남 용수 보완 보)",
+        supply: "총 저수용량 약 800만 톤 규모의 상량 조절",
+        destinations: "세종 국가시범도시 스마트 워터넷 및 금강 유역 중류 공업용수",
+        risk: "수질 및 하천 환경 단체의 보 상시 개방 압박과 가뭄 시기 담수 확보 필요성의 대립",
+        law: "금강수계법 및 물관리 위원회 가동 가이드",
+        tag: "금강 유역 환경유량 수위 조절보",
+        desc: "세종보와 공주보는 금강 중류의 담수 능력을 제고하여 대청댐에서 내려오는 물줄기를 일시 저장하고 지류의 하천 수질 개선 및 가뭄 시 비상 용수로써 기능합니다."
+      },
+      gangjeongbo: {
+        title: "강정고령보 (낙동강 본류 - 대구/영남 최대 수량 완충 보)",
+        supply: "총 저수용량 약 2,500만 톤 규모의 최대 유역 저류",
+        destinations: "대구 성서 산업단지 및 낙동강 하류 구미/창원 비상 도수망 지원",
+        risk: "여름철 보 주변 유속 저하에 따른 녹조 발생으로 정수 정밀 비용 가중 위험",
+        law: "낙동강 수계 가뭄 대응 보 연계 운영 지침",
+        tag: "낙동강 본류 최대 보 인프라",
+        desc: "강정고령보는 낙동강 8개 보 중 최대 규모로 대구 성서 산단과 주변 국가 전략 거점의 공업 수위 저하를 막기 위해 상시 대량의 물을 저장하는 낙동강 수량 유지의 심장부입니다."
+      },
+      seungchonbo: {
+        title: "승촌보 (영산강 본류 - 호남 수계 비상 수위 조절 보)",
+        supply: "총 저수용량 약 900만 톤 규모의 담수 및 방류 조절",
+        destinations: "광주/나주 인근 혁신도시 첨단 산단 및 주변 배후 농공 단지",
+        risk: "영산강 수질 정화율 하락 시 본류 공업 취수 수원의 유해물질 필터링 비용 가중",
+        law: "영산강·섬진강수계법 및 비상 취수 조례",
+        tag: "영산강 수위 완충 및 비상 저류 인프라",
+        desc: "승촌보는 영산강 유역의 급속한 물 공급 부족에 대비해 가뭄 시 주암댐에서 공급하는 물 부담을 경감하고 비상 정수를 통해 광주/전남 첨단 거점에 유량을 보완합니다."
+      }
+    };
+
+    // UI Interactive Element Selectors
+    const sliders = {
+      hwacheon: document.getElementById('slide-hwacheon'),
+      dams: document.getElementById('slide-dams'),
+      reuse: document.getElementById('slide-reuse'),
+      invest: document.getElementById('slide-invest'),
+      fabCost: document.getElementById('slide-fab-cost'),
+      layers: document.getElementById('slide-layers'),
+      recovery: document.getElementById('slide-recovery'),
+      utility: document.getElementById('slide-utility')
+    };
+
+    const labels = {
+      hwacheon: document.getElementById('label-hwacheon'),
+      dams: document.getElementById('label-dams'),
+      reuse: document.getElementById('label-reuse'),
+      invest: document.getElementById('label-invest'),
+      fabCost: document.getElementById('label-fab-cost'),
+      layers: document.getElementById('label-layers'),
+      recovery: document.getElementById('label-recovery'),
+      utility: document.getElementById('label-utility')
+    };
+
+    const outputs = {
+      fabs: document.getElementById('calc-fabs'),
+      datacenters: document.getElementById('calc-datacenters'),
+      rdHubs: document.getElementById('calc-rd-hubs'),
+      wafers: document.getElementById('calc-wafers'),
+      chipFootprint: document.getElementById('calc-chip-footprint'),
+      waterFabs: document.getElementById('calc-water-fabs'),
+      waterDc: document.getElementById('calc-water-dc'),
+      waterRd: document.getElementById('calc-water-rd'),
+      clusterDemand: document.getElementById('calc-cluster-demand'),
+      
+      totalDemand: document.getElementById('val-total-demand'),
+      totalSupply: document.getElementById('val-total-supply'),
+      netBalance: document.getElementById('val-net-balance'),
+      balanceStatus: document.getElementById('val-balance-status'),
+      securityIndex: document.getElementById('val-security-index'),
+      securityText: document.getElementById('val-security-text'),
+      
+      cardDemand: document.getElementById('card-demand'),
+      cardSupply: document.getElementById('card-supply'),
+      cardBalance: document.getElementById('card-balance'),
+      cardSecurityIndex: document.getElementById('card-security-index')
+    };
+
+    // Global simulator state
+    let state = {
+      // Inputs
+      slideHwacheonVal: 50,
+      slideDamsVal: 30,
+      slideReuseVal: 40,
+      slideInvestVal: 800,
+      slideFabCostVal: 30,
+      slideLayersVal: 130,
+      slideRecoveryVal: 75,
+      slideUtilityVal: 30,
+
+      // Scenario state
+      scenario: 'future', // 'current' or 'future'
+      savedFutureState: null,
+      selectedNode: 'yongin', // highlighted node on canvas map
+
+      // Calculated intermediate
+      fabsNum: 0,
+      datacentersNum: 0,
+      rdHubsNum: 0,
+      fabsWaterTons: 0,
+      datacenterWaterTons: 0,
+      rdWaterTons: 0,
+      wafersMonth: 0,
+      chipFootprintL: 0,
+      yonginDemandTons: 0,
+
+      // Calculated totals
+      totalDemandTons: 0,
+      totalSupplyTons: 0,
+      netBalanceTons: 0,
+      sufficiencyRate: 0,
+      
+      // Particle system toggle
+      animateFlow: true
+    };
+
+    // --------------------------------------------------
+    // CORE MATHEMATICAL EQUATIONS ENGINE
+    // --------------------------------------------------
+    function updateCalculations() {
+      // 1. Read input values based on active scenario
+      if (state.scenario === 'current') {
+        state.slideHwacheonVal = 0;
+        state.slideDamsVal = 0;
+        state.slideReuseVal = 15;
+        state.slideInvestVal = 50;
+        state.slideFabCostVal = 30;
+        state.slideLayersVal = 80;
+        state.slideRecoveryVal = 70;
+        state.slideUtilityVal = 30;
+      } else {
+        state.slideHwacheonVal = parseInt(sliders.hwacheon.value);
+        state.slideDamsVal = parseInt(sliders.dams.value);
+        state.slideReuseVal = parseInt(sliders.reuse.value);
+        state.slideInvestVal = parseInt(sliders.invest.value);
+        state.slideFabCostVal = parseInt(sliders.fabCost.value);
+        state.slideLayersVal = parseInt(sliders.layers.value);
+        state.slideRecoveryVal = parseInt(sliders.recovery.value);
+        state.slideUtilityVal = parseInt(sliders.utility.value);
+      }
+
+      // Update Slider Labels
+      labels.hwacheon.innerText = `${state.slideHwacheonVal}%`;
+      labels.dams.innerText = `${state.slideDamsVal}%`;
+      labels.reuse.innerText = `${state.slideReuseVal}%`;
+      labels.invest.innerText = `${state.slideInvestVal} 조 원`;
+      labels.fabCost.innerText = `${state.slideFabCostVal} 조 원`;
+      labels.layers.innerText = `${state.slideLayersVal} L`;
+      labels.recovery.innerText = `${state.slideRecoveryVal}%`;
+      labels.utility.innerText = `${state.slideUtilityVal}%`;
+
+      // 2. Industrial / Infrastructure reverse calculations
+      // Investment breakdown: 70% Semiconductor Fabs, 15% AI Data Centers, 15% R&D Hubs
+      state.fabsNum = (state.slideInvestVal * 0.70) / state.slideFabCostVal;
+      state.datacentersNum = Math.round((state.slideInvestVal * 0.15) / 2.0); // 2조원 당 1개소
+      state.rdHubsNum = Math.round((state.slideInvestVal * 0.15) / 4.0);      // 4조원 당 1개소
+      
+      // Wafers = Fabs * 100,000 Wafers/month
+      state.wafersMonth = state.fabsNum * 100000;
+      
+      // Water footprint per chip (Liters/chip)
+      // Let's assume: 800 chips per wafer. Base water load is 6 Liters per wafer-layer.
+      // Water footprint per Wafer = base_water * layers * (1 - recovery_rate) * (1 + utility_factor)
+      const baseWaterPerWaferLayer = 6; // L/wafer-layer
+      const recoveryMultiplier = 1 - (state.slideRecoveryVal / 100);
+      const utilityMultiplier = 1 + (state.slideUtilityVal / 100);
+      const waterPerWafer = baseWaterPerWaferLayer * state.slideLayersVal * recoveryMultiplier * utilityMultiplier;
+      state.chipFootprintL = waterPerWafer / 800; // assuming 800 chips/wafer
+      
+      // Yongin semiconductor cluster daily water demand (Tons/day)
+      // Standard scale: 1 Fab (100k wafers/mo) consumes about 45,000 tons of water per day.
+      // Scaling with process complexity (L), recovery efficiency (R_upw), and utilities (U)
+      const baseFabWaterUsageTons = 45000; // tons/day per fab
+      const layerScale = state.slideLayersVal / 100;
+      const recoveryScale = recoveryMultiplier / 0.25; // normalized around 75% recovery
+      const utilityScale = utilityMultiplier / 1.30;   // normalized around 30% utility
+      const actualWaterPerFabTons = baseFabWaterUsageTons * layerScale * recoveryScale * utilityScale;
+      
+      // Water demands for each facility type
+      state.fabsWaterTons = state.fabsNum * actualWaterPerFabTons;
+      state.datacenterWaterTons = state.datacentersNum * 1500; // 1,500 tons/day per data center
+      state.rdWaterTons = state.rdHubsNum * 2000;             // 2,000 tons/day per R&D hub
+      
+      // Total Yongin Area demand
+      state.yonginDemandTons = Math.round(state.fabsWaterTons + state.datacenterWaterTons + state.rdWaterTons);
+
+      // 3. System totals: Demand & Supply Matcher
+      // Demand side: Yongin Cluster Demand + fixed regional demands
+      const regionalDemands = state.scenario === 'current' ? {
+        chungcheong: 150000, // 15만 톤/일 (기초 수급)
+        honam: 80000,        // 8만 톤/일 (기초 수급)
+        yeongnam: 250000     // 25만 톤/일 (기초 수급)
+      } : {
+        chungcheong: 400000, // 40만 톤/일 (미래 첨단 산단 완공)
+        honam: 300000,       // 30만 톤/일 (미래 AI 허브 완공)
+        yeongnam: 500000     // 50만 톤/일 (미래 모빌리티 완공)
+      };
+      state.totalDemandTons = state.yonginDemandTons + regionalDemands.chungcheong + regionalDemands.honam + regionalDemands.yeongnam;
+
+      // Supply side: Base Supply (1.0 Million tons) + policy measures
+      const baseSupplyTons = 1000000;
+      const hwacheonMaxTons = 762000;
+      const damsMaxTons = 400000;
+      const reuseMaxTons = 300000;
+      
+      const hwacheonSupply = hwacheonMaxTons * (state.slideHwacheonVal / 100);
+      const damsSupply = damsMaxTons * (state.slideDamsVal / 100);
+      const reuseSupply = reuseMaxTons * (state.slideReuseVal / 100);
+
+      state.totalSupplyTons = Math.round(baseSupplyTons + hwacheonSupply + damsSupply + reuseSupply);
+      state.netBalanceTons = state.totalSupplyTons - state.totalDemandTons;
+      state.sufficiencyRate = Math.round((state.totalSupplyTons / state.totalDemandTons) * 100);
+
+      // 4. Update UI Outputs
+      outputs.fabs.innerText = `${state.fabsNum.toFixed(1)} 개소`;
+      outputs.datacenters.innerText = `${state.datacentersNum} 개소`;
+      outputs.rdHubs.innerText = `${state.rdHubsNum} 개소`;
+      outputs.wafers.innerText = `${Math.round(state.wafersMonth).toLocaleString()} Wafer/월`;
+      outputs.chipFootprint.innerText = `${state.chipFootprintL.toFixed(3)} L/chip`;
+      
+      outputs.waterFabs.innerText = `${(state.fabsWaterTons/10000).toFixed(2)} 만 톤/일`;
+      outputs.waterDc.innerText = `${(state.datacenterWaterTons/10000).toFixed(2)} 만 톤/일`;
+      outputs.waterRd.innerText = `${(state.rdWaterTons/10000).toFixed(2)} 만 톤/일`;
+      
+      outputs.clusterDemand.innerText = `${(state.yonginDemandTons/10000).toFixed(2)} 만 톤/일`;
+
+      outputs.totalDemand.innerHTML = `${Math.round(state.totalDemandTons/10000).toLocaleString()}<span> 만 톤/일</span>`;
+      outputs.totalSupply.innerHTML = `${Math.round(state.totalSupplyTons/10000).toLocaleString()}<span> 만 톤/일</span>`;
+      
+      const sign = state.netBalanceTons >= 0 ? '+' : '';
+      outputs.netBalance.innerHTML = `${sign}${Math.round(state.netBalanceTons/10000).toLocaleString()}<span> 만 톤/일</span>`;
+      outputs.securityIndex.innerText = `${state.sufficiencyRate}%`;
+
+      // Visual States updating based on Sufficiency Rate
+      // Reset card borders
+      outputs.cardBalance.className = "metric-card";
+      outputs.cardSecurityIndex.className = "metric-card";
+
+      if (state.sufficiencyRate >= 100) {
+        // Safe (Green)
+        outputs.balanceStatus.innerHTML = `<span class="status-pill safe">수급 안보 확보 (안전)</span>`;
+        outputs.securityText.innerText = "계획 수급 충분함";
+        outputs.securityText.style.color = "var(--color-success)";
+        outputs.cardBalance.classList.add("success");
+        outputs.cardSecurityIndex.classList.add("success");
+      } else if (state.sufficiencyRate >= 90) {
+        // Warning (Yellow)
+        outputs.balanceStatus.innerHTML = `<span class="status-pill warning">가뭄 물 스트레스 잠재적 취약 (주의)</span>`;
+        outputs.securityText.innerText = "국지적 가뭄 시 부족 가능";
+        outputs.securityText.style.color = "var(--color-warning)";
+        outputs.cardBalance.classList.add("warning");
+        outputs.cardSecurityIndex.classList.add("warning");
+      } else {
+        // Crisis (Red)
+        outputs.balanceStatus.innerHTML = `<span class="status-pill danger">초순수 생산공정 중단 위험 (위기)</span>`;
+        outputs.securityText.innerText = "팹 가동 제한 우려";
+        outputs.securityText.style.color = "var(--color-danger)";
+        outputs.cardBalance.classList.add("danger");
+        outputs.cardSecurityIndex.classList.add("danger");
+      }
+    }
+
+    // --------------------------------------------------
+    // TABS & INFORMATION SHEET
+    // --------------------------------------------------
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      
+      document.getElementById(tabId).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    function showFact(regionKey, btnElement) {
+      // Find button elements
+      const targetBtn = btnElement || document.getElementById('btn-fact-' + regionKey);
+      
+      document.querySelectorAll('.fact-btn').forEach(el => el.classList.remove('active'));
+      if (targetBtn) {
+        targetBtn.classList.add('active');
+        // Scroll the button into view if sidebar is scrollable
+        targetBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      state.selectedNode = regionKey; // Highlight on Canvas!
+
+      const data = factSheets[regionKey];
+      if (!data) return;
+      
+      const box = document.getElementById('fact-details-box');
+      box.style.opacity = 0;
+      setTimeout(() => {
+        document.getElementById('fact-title').innerText = data.title;
+        
+        const metaItems = box.querySelectorAll('.fact-meta-item');
+        if (metaItems.length >= 4) {
+          // Dynamic label for demand hubs vs supply dams
+          if (data.demand) {
+            metaItems[0].querySelector('.fact-meta-label').innerText = "공식 요구 용수량:";
+            metaItems[0].querySelector('.fact-meta-value').innerText = data.demand;
+            
+            metaItems[1].querySelector('.fact-meta-label').innerText = "주요 공급 취수원:";
+            metaItems[1].querySelector('.fact-meta-value').innerText = data.sources;
+            
+            metaItems[2].querySelector('.fact-meta-label').innerText = "핵심 정책 애로사항:";
+            metaItems[2].querySelector('.fact-meta-value').innerText = data.risk;
+          } else {
+            metaItems[0].querySelector('.fact-meta-label').innerText = "공급 능력 (최대):";
+            metaItems[0].querySelector('.fact-meta-value').innerText = data.supply;
+            
+            metaItems[1].querySelector('.fact-meta-label').innerText = "주요 공급 대상지:";
+            metaItems[1].querySelector('.fact-meta-value').innerText = data.destinations;
+            
+            metaItems[2].querySelector('.fact-meta-label').innerText = "수자원 확보 애로사항:";
+            metaItems[2].querySelector('.fact-meta-value').innerText = data.risk;
+          }
+          
+          metaItems[3].querySelector('.fact-meta-value').innerText = data.law;
+        }
+        
+        const tag = box.querySelector('.fact-law-tag');
+        if (tag) {
+          tag.innerText = data.tag;
+          if (data.demand) {
+            tag.style.background = "rgba(239, 68, 68, 0.1)";
+            tag.style.borderColor = "rgba(239, 68, 68, 0.2)";
+            tag.style.color = "#f87171";
+          } else {
+            tag.style.background = "rgba(56, 189, 248, 0.1)";
+            tag.style.borderColor = "rgba(56, 189, 248, 0.2)";
+            tag.style.color = "#60a5fa";
+          }
+        }
+        
+        const desc = document.getElementById('fact-desc');
+        if (desc) desc.innerText = data.desc;
+        
+        box.style.opacity = 1;
+      }, 150);
+    }
+
+    // --------------------------------------------------
+    // CANVAS ANIMATION ENGINE
+    // --------------------------------------------------
+    const canvas = document.getElementById('mapCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Geography Coordinates mapping (relative to canvas 560x660)
+    // Scale outline of Korea to fit nicely in the viewport
+    const koreaOutlinePoints = [
+      { x: 230, y: 30 },   // DMZ North-West
+      { x: 310, y: 35 },   // DMZ North-East
+      { x: 360, y: 70 },   // Gangneung Coast
+      { x: 410, y: 150 },  // Pohang Coast
+      { x: 430, y: 220 },  // Busan Coast
+      { x: 410, y: 350 },  // Ulsan / Gyeongju
+      { x: 390, y: 440 },  // Busan South Coast
+      { x: 340, y: 470 },  // Tongyeong
+      { x: 290, y: 480 },  // Namhae
+      { x: 240, y: 490 },  // Yeosu
+      { x: 190, y: 480 },  // Wando
+      { x: 150, y: 470 },  // Jindo
+      { x: 110, y: 420 },  // Mokpo
+      { x: 120, y: 330 },  // Gunsan
+      { x: 100, y: 260 },  // Buan
+      { x: 140, y: 200 },  // Dangjin
+      { x: 170, y: 140 },  // Incheon
+      { x: 210, y: 110 }   // Seoul Bay
+    ];
+
+    // Map Nodes Definition (Water Sources, Weirs, and strategic demand hubs)
+    const nodes = {
+      // Water Sources (Dams) - Glowing Blue (type: 'source')
+      hwacheon: { name: "화천댐", x: 270, y: 70, type: "source", baseGlow: 8, slider: 'hwacheon' },
+      soyanggang: { name: "소양강댐", x: 305, y: 80, type: "source", baseGlow: 8, slider: null },
+      paldang: { name: "팔당댐", x: 230, y: 130, type: "source", baseGlow: 8, slider: null },
+      chungju: { name: "충주댐", x: 295, y: 155, type: "source", baseGlow: 8, slider: null },
+      daecheong: { name: "대청댐", x: 220, y: 240, type: "source", baseGlow: 8, slider: null },
+      yongdam: { name: "용담댐", x: 235, y: 295, type: "source", baseGlow: 8, slider: null },
+      andong: { name: "안동댐", x: 340, y: 210, type: "source", baseGlow: 8, slider: null },
+      imha: { name: "임하댐", x: 360, y: 220, type: "source", baseGlow: 8, slider: null },
+      hapcheon: { name: "합천댐", x: 295, y: 345, type: "source", baseGlow: 8, slider: null },
+      juam: { name: "주암댐", x: 180, y: 420, type: "source", baseGlow: 8, slider: null },
+
+      // Weirs (보) - Grey / Yellow Gate Icons (type: 'weir')
+      yeojubo: { name: "여주보", x: 260, y: 143, type: "weir" },
+      sejongbo: { name: "세종·공주보", x: 195, y: 255, type: "weir" },
+      gangjeongbo: { name: "강정고령보", x: 335, y: 310, type: "weir" },
+      seungchonbo: { name: "승촌보", x: 155, y: 418, type: "weir" },
+
+      // Industrial Hubs (Consumer Centers) - Glowing Magenta/Purple (type: 'hub')
+      yongin: { name: "용인 반도체 클러스터", x: 230, y: 175, type: "hub", baseGlow: 12, size: 8 },
+      chungcheongHub: { name: "충청 첨단 산단", x: 240, y: 255, type: "hub", baseGlow: 10, size: 6 },
+      honamHub: { name: "호남 AI 센터", x: 160, y: 390, type: "hub", baseGlow: 10, size: 6 },
+      yeongnamHub: { name: "영남 AI 센터", x: 330, y: 360, type: "hub", baseGlow: 10, size: 6 }
+    };
+
+    // Pipelines (Source -> Destination connections)
+    const pipelines = [
+      // Hwacheon -> Paldang -> Yongin
+      { from: nodes.hwacheon, to: nodes.paldang, controlSlider: 'hwacheon', activeGlow: 0 },
+      { from: nodes.paldang, to: nodes.yongin, controlSlider: 'hwacheon', activeGlow: 0 },
+      
+      // Chungju -> Yongin
+      { from: nodes.chungju, to: nodes.yongin, controlSlider: 'dams', activeGlow: 0 },
+      
+      // Daecheong -> Chungcheong
+      { from: nodes.daecheong, to: nodes.chungcheongHub, controlSlider: 'reuse', activeGlow: 0 },
+      
+      // Juam -> Honam
+      { from: nodes.juam, to: nodes.honamHub, controlSlider: 'dams', activeGlow: 0 },
+      
+      // Andong -> Yeongnam
+      { from: nodes.andong, to: nodes.yeongnamHub, controlSlider: 'dams', activeGlow: 0 },
+
+      // Hapcheon -> Yeongnam
+      { from: nodes.hapcheon, to: nodes.yeongnamHub, controlSlider: 'dams', activeGlow: 0 }
+    ];
+
+    // Particle class for pipe flow visualization
+    class Particle {
+      constructor(pipeline) {
+        this.pipeline = pipeline;
+        this.reset();
+      }
+
+      reset() {
+        this.progress = Math.random(); // Position along pipeline [0, 1]
+        // Base speeds with a slight random variation
+        this.speed = 0.003 + Math.random() * 0.002; 
+      }
+
+      update(flowMultiplier) {
+        // Update progress based on the flow multiplier (slider values)
+        this.progress += this.speed * flowMultiplier;
+        if (this.progress > 1) {
+          this.reset();
+          this.progress = 0;
+        }
+      }
+
+      draw() {
+        if (this.progress <= 0 || this.progress >= 1) return;
+
+        // Linear interpolation of coordinates
+        const x = this.pipeline.from.x + (this.pipeline.to.x - this.pipeline.from.x) * this.progress;
+        const y = this.pipeline.from.y + (this.pipeline.to.y - this.pipeline.from.y) * this.progress;
+
+        // Particle particle drawing
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = '#60a5fa';
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 6;
+        ctx.fill();
+        ctx.shadowBlur = 0; // reset
+      }
+    }
+
+    // Initialize Particle Pool
+    const particles = [];
+    pipelines.forEach(pipe => {
+      // Spawn 15 particles per pipeline
+      for (let i = 0; i < 15; i++) {
+        particles.push(new Particle(pipe));
+      }
+    });
+
+    // Drawing helpers
+    function drawMapBackground() {
+      // 1. Korea landmass outline (Smoother curves for better visualization)
+      ctx.beginPath();
+      ctx.moveTo(koreaOutlinePoints[0].x, koreaOutlinePoints[0].y);
+      for (let i = 1; i < koreaOutlinePoints.length; i++) {
+        const prev = koreaOutlinePoints[i - 1];
+        const curr = koreaOutlinePoints[i];
+        const xc = (prev.x + curr.x) / 2;
+        const yc = (prev.y + curr.y) / 2;
+        ctx.quadraticCurveTo(prev.x, prev.y, xc, yc);
+      }
+      ctx.lineTo(koreaOutlinePoints[koreaOutlinePoints.length - 1].x, koreaOutlinePoints[koreaOutlinePoints.length - 1].y);
+      ctx.closePath();
+      
+      // Stroke Landmass
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.15)';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // Fill Landmass with glowing grid-effect
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.4)';
+      ctx.fill();
+
+      // Draw Grid on Korea
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += 30) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += 30) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+
+      // Jeju Island
+      ctx.beginPath();
+      ctx.ellipse(200, 540, 28, 12, Math.PI / 12, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.4)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.15)';
+      ctx.stroke();
+
+      // 2. Draw Major Rivers (큰 줄기의 강줄기/물줄기) - Glowing Cyan-Blue Channels
+      ctx.save();
+      ctx.shadowColor = '#0284c7';
+      ctx.shadowBlur = 4;
+      ctx.lineWidth = 3.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      
+      // -- Han River System (한강 수계) --
+      // North Han: Hwacheon (270,70) -> Soyanggang (305,80) -> Paldang (230,130)
+      ctx.beginPath();
+      ctx.moveTo(270, 70);
+      ctx.lineTo(305, 80);
+      ctx.lineTo(260, 110);
+      ctx.lineTo(230, 130);
+      
+      // South Han: Chungju (295,155) -> Yeojubo (260,143) -> Paldang (230,130)
+      ctx.moveTo(295, 155);
+      ctx.lineTo(260, 143);
+      ctx.lineTo(230, 130);
+      
+      // Main Han: Paldang (230,130) -> Seoul Bay (170, 140)
+      ctx.lineTo(190, 125);
+      ctx.lineTo(170, 140);
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+      ctx.stroke();
+
+      // -- Nakdong River System (낙동강 수계) --
+      // Andong (340,210) & Imha (360,220) -> Confluence -> Sangju -> Gangjeong (335,310) -> Changnyeong -> Busan (350,430)
+      ctx.beginPath();
+      ctx.moveTo(360, 220); // Imha Dam
+      ctx.lineTo(340, 210); // Andong Dam
+      ctx.lineTo(325, 230);
+      ctx.lineTo(325, 270);
+      ctx.quadraticCurveTo(345, 290, 335, 310); // Gangjeongbo Weir
+      ctx.quadraticCurveTo(320, 350, 325, 380);
+      ctx.lineTo(350, 430); // Busan estuary
+      
+      // Hapcheon Dam (295,345) -> Nakdong River confluence
+      ctx.moveTo(295, 345);
+      ctx.lineTo(324, 360);
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+      ctx.stroke();
+
+      // -- Geum River System (금강 수계) --
+      // Yongdam Dam (235,295) -> Daecheong Dam (220,240) -> Sejongbo (195,255) -> Gunsan (120,330)
+      ctx.beginPath();
+      ctx.moveTo(235, 295); // Yongdam Dam
+      ctx.lineTo(220, 240); // Daecheong Dam
+      ctx.lineTo(195, 255); // Sejongbo
+      ctx.quadraticCurveTo(160, 280, 120, 330); // Estuary
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+      ctx.stroke();
+
+      // -- Yeongsan River System (영산강 수계) --
+      // Seungchonbo (155,418) -> Juam Dam (180,420) -> Mokpo (110,420)
+      ctx.beginPath();
+      ctx.moveTo(180, 420); // Juam Dam
+      ctx.lineTo(155, 418); // Seungchonbo
+      ctx.lineTo(110, 420); // Mokpo
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+      ctx.stroke();
+
+      ctx.restore();
+
+      // 3. Draw Waterway Label Texts
+      ctx.font = '700 8px Outfit, Noto Sans KR';
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
+      ctx.textAlign = 'left';
+      ctx.fillText("한강 수계", 185, 115);
+      ctx.fillText("금강 수계", 145, 275);
+      ctx.fillText("영산강 수계", 115, 395);
+      ctx.fillText("낙동강 수계", 355, 290);
+    }
+
+    function drawPipelines() {
+      pipelines.forEach(pipe => {
+        // Get the progress rating of the corresponding measure
+        let flowMultiplier = 0.5; // base
+        if (pipe.controlSlider === 'hwacheon') {
+          flowMultiplier = state.slideHwacheonVal / 100;
+        } else if (pipe.controlSlider === 'dams') {
+          flowMultiplier = state.slideDamsVal / 100;
+        } else if (pipe.controlSlider === 'reuse') {
+          flowMultiplier = state.slideReuseVal / 100;
+        }
+
+        // Color and glow gradient depending on flow
+        ctx.beginPath();
+        ctx.moveTo(pipe.from.x, pipe.from.y);
+        ctx.lineTo(pipe.to.x, pipe.to.y);
+        
+        ctx.lineWidth = 3;
+        // Pipe color scales from dark grey to neon blue
+        const r = Math.round(15 + (56 - 15) * flowMultiplier);
+        const g = Math.round(23 + (189 - 23) * flowMultiplier);
+        const b = Math.round(42 + (248 - 42) * flowMultiplier);
+        ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`;
+        
+        // Add shadow for high flow
+        if (flowMultiplier > 0.3) {
+          ctx.shadowColor = `rgba(56, 189, 248, ${flowMultiplier * 0.5})`;
+          ctx.shadowBlur = 8;
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0; // reset
+      });
+    }
+
+    function drawNodes() {
+      Object.keys(nodes).forEach(key => {
+        const node = nodes[key];
+        
+        // Check if hub is in deficit (Water Crisis)
+        const isDeficit = state.sufficiencyRate < 100 && state.scenario === 'future';
+
+        // Draw selected node highlight pulsing ring
+        if (state.selectedNode === key) {
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, (node.type === 'hub' ? 18 : 14) + Math.sin(Date.now() / 150) * 3, 0, Math.PI * 2);
+          
+          let color = 'rgba(56, 189, 248, 0.8)';
+          let glow = '#38bdf8';
+          if (node.type === 'hub') {
+            if (isDeficit) {
+              color = 'rgba(239, 68, 68, 0.8)';
+              glow = '#ef4444';
+            } else {
+              color = 'rgba(168, 85, 247, 0.8)';
+              glow = '#c084fc';
+            }
+          } else if (node.type === 'weir') {
+            color = 'rgba(251, 191, 36, 0.8)';
+            glow = '#fbbf24';
+          }
+          
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2.5;
+          ctx.shadowColor = glow;
+          ctx.shadowBlur = 12;
+          ctx.stroke();
+          ctx.shadowBlur = 0; // reset
+        }
+
+        // Draw node shape based on type
+        if (node.type === 'source') {
+          // Draw Dam (Triangle)
+          ctx.beginPath();
+          ctx.moveTo(node.x, node.y - 8);
+          ctx.lineTo(node.x + 8, node.y + 6);
+          ctx.lineTo(node.x - 8, node.y + 6);
+          ctx.closePath();
+          
+          ctx.fillStyle = 'rgba(14, 165, 233, 0.2)';
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+          ctx.lineWidth = 1.5;
+          ctx.fill();
+          ctx.stroke();
+
+          // Core dot
+          ctx.beginPath();
+          ctx.arc(node.x, node.y + 1, 3, 0, Math.PI * 2);
+          ctx.fillStyle = '#38bdf8';
+          ctx.fill();
+        } else if (node.type === 'weir') {
+          // Draw Weir (Control Gate / Rectangle with crossing line)
+          ctx.fillStyle = 'rgba(71, 85, 105, 0.4)';
+          ctx.strokeStyle = '#94a3b8';
+          ctx.lineWidth = 1.5;
+          ctx.fillRect(node.x - 5, node.y - 5, 10, 10);
+          ctx.strokeRect(node.x - 5, node.y - 5, 10, 10);
+          
+          // Gate indicator line
+          ctx.beginPath();
+          ctx.moveTo(node.x - 5, node.y);
+          ctx.lineTo(node.x + 5, node.y);
+          ctx.strokeStyle = '#fbbf24'; // Gate glow
+          ctx.stroke();
+        } else {
+          // Draw Hub (Diamond / Hexagon)
+          ctx.beginPath();
+          ctx.moveTo(node.x, node.y - 9);
+          ctx.lineTo(node.x + 9, node.y);
+          ctx.lineTo(node.x, node.y + 9);
+          ctx.lineTo(node.x - 9, node.y);
+          ctx.closePath();
+          
+          let fillColor = 'rgba(168, 85, 247, 0.2)';
+          let strokeColor = 'rgba(168, 85, 247, 0.6)';
+          let coreColor = '#c084fc';
+          
+          if (isDeficit) {
+            // Blinking red warning effect
+            const blink = Math.sin(Date.now() / 120) > 0;
+            fillColor = blink ? 'rgba(239, 68, 68, 0.35)' : 'rgba(239, 68, 68, 0.1)';
+            strokeColor = 'rgba(239, 68, 68, 0.8)';
+            coreColor = '#f87171';
+          }
+          
+          ctx.fillStyle = fillColor;
+          ctx.strokeStyle = strokeColor;
+          ctx.lineWidth = 1.5;
+          ctx.fill();
+          ctx.stroke();
+
+          // Core square
+          ctx.fillStyle = coreColor;
+          ctx.fillRect(node.x - 3, node.y - 3, 6, 6);
+        }
+
+        // Node labels
+        ctx.font = 'bold 9px Outfit, Noto Sans KR';
+        ctx.fillStyle = '#e2e8f0';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = 'black';
+        ctx.shadowBlur = 4;
+        ctx.fillText(node.name, node.x, node.y - 14);
+        ctx.shadowBlur = 0; // reset
+      });
+    }
+
+    function animate() {
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw map vectors
+      drawMapBackground();
+      drawPipelines();
+
+      // Animate Particles
+      if (state.animateFlow) {
+        particles.forEach(p => {
+          let flowMultiplier = 0.5; // base
+          if (p.pipeline.controlSlider === 'hwacheon') {
+            flowMultiplier = state.slideHwacheonVal / 100;
+          } else if (p.pipeline.controlSlider === 'dams') {
+            flowMultiplier = state.slideDamsVal / 100;
+          } else if (p.pipeline.controlSlider === 'reuse') {
+            flowMultiplier = state.slideReuseVal / 100;
+          }
+
+          // If no flow, particle does not update or show
+          if (flowMultiplier > 0.05) {
+            p.update(flowMultiplier * 2.5); // speed up animation slightly
+            p.draw();
+          }
+        });
+      }
+
+      // Draw Nodes on top
+      drawNodes();
+
+      requestAnimationFrame(animate);
+    }
+
+    // --------------------------------------------------
+    // SCENARIO MANAGEMENT
+    // --------------------------------------------------
+    function switchScenario(mode) {
+      if (state.scenario === mode) return;
+
+      const btnCurrent = document.getElementById('scenario-current');
+      const btnFuture = document.getElementById('scenario-future');
+
+      if (mode === 'current') {
+        // Save current slider positions as future state
+        state.savedFutureState = {
+          hwacheon: sliders.hwacheon.value,
+          dams: sliders.dams.value,
+          reuse: sliders.reuse.value,
+          invest: sliders.invest.value,
+          fabCost: sliders.fabCost.value,
+          layers: sliders.layers.value,
+          recovery: sliders.recovery.value,
+          utility: sliders.utility.value
+        };
+
+        state.scenario = 'current';
+        btnCurrent.classList.add('active');
+        btnFuture.classList.remove('active');
+
+        // Disable sliders
+        Object.keys(sliders).forEach(key => {
+          sliders[key].disabled = true;
+        });
+
+        // Set baseline values visually in sliders
+        sliders.hwacheon.value = 0;
+        sliders.dams.value = 0;
+        sliders.reuse.value = 15;
+        sliders.invest.value = 50;
+        sliders.fabCost.value = 30;
+        sliders.layers.value = 80;
+        sliders.recovery.value = 70;
+        sliders.utility.value = 30;
+      } else {
+        state.scenario = 'future';
+        btnFuture.classList.add('active');
+        btnCurrent.classList.remove('active');
+
+        // Enable sliders
+        Object.keys(sliders).forEach(key => {
+          sliders[key].disabled = false;
+        });
+
+        // Restore user values
+        if (state.savedFutureState) {
+          sliders.hwacheon.value = state.savedFutureState.hwacheon;
+          sliders.dams.value = state.savedFutureState.dams;
+          sliders.reuse.value = state.savedFutureState.reuse;
+          sliders.invest.value = state.savedFutureState.invest;
+          sliders.fabCost.value = state.savedFutureState.fabCost;
+          sliders.layers.value = state.savedFutureState.layers;
+          sliders.recovery.value = state.savedFutureState.recovery;
+          sliders.utility.value = state.savedFutureState.utility;
+        }
+      }
+
+      updateCalculations();
+    }
+
+    // --------------------------------------------------
+    // EVENT LISTENERS & INITS
+    // --------------------------------------------------
+    
+    // Sliders Event Handlers
+    Object.keys(sliders).forEach(key => {
+      sliders[key].addEventListener('input', updateCalculations);
+    });
+
+    // Scenario Switcher Event Handlers
+    document.getElementById('scenario-current').addEventListener('click', () => switchScenario('current'));
+    document.getElementById('scenario-future').addEventListener('click', () => switchScenario('future'));
+
+    // Reset button
+    document.getElementById('btn-reset-sliders').addEventListener('click', () => {
+      if (state.scenario === 'current') return;
+      sliders.hwacheon.value = 50;
+      sliders.dams.value = 30;
+      sliders.reuse.value = 40;
+      sliders.invest.value = 800;
+      sliders.fabCost.value = 30;
+      sliders.layers.value = 130;
+      sliders.recovery.value = 75;
+      sliders.utility.value = 30;
+      updateCalculations();
+    });
+
+    // Particle flow toggle button
+    document.getElementById('btn-toggle-particles').addEventListener('click', () => {
+      state.animateFlow = !state.animateFlow;
+      const btn = document.getElementById('btn-toggle-particles');
+      btn.innerText = state.animateFlow ? "파티클 토글" : "파티클 토글";
+    });
+
+    // Canvas Mouse Click handler to select nodes and show details
+    canvas.addEventListener('click', function(event) {
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      
+      // Scale coordinates in case canvas size is modified by CSS layout
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const clickX = x * scaleX;
+      const clickY = y * scaleY;
+      
+      let closestNode = null;
+      let minDistance = 25; // Click detection radius
+      
+      Object.keys(nodes).forEach(key => {
+        const node = nodes[key];
+        const dist = Math.sqrt((clickX - node.x) ** 2 + (clickY - node.y) ** 2);
+        if (dist < minDistance) {
+          minDistance = dist;
+          closestNode = { key, ...node };
+        }
+      });
+      
+      if (closestNode) {
+        // Automatically switch tab if formulas tab is active
+        const factCheckTabBtn = document.querySelector('.tabs-header button:first-child');
+        if (factCheckTabBtn && !factCheckTabBtn.classList.contains('active')) {
+          // Trigger click simulation or direct tab switch
+          document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+          document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+          document.getElementById('tab-factcheck').classList.add('active');
+          if (factCheckTabBtn) factCheckTabBtn.classList.add('active');
+        }
+        showFact(closestNode.key);
+      }
+    });
+
+    // Window Load Initialization
+    window.addEventListener('load', () => {
+      updateCalculations();
+      animate(); // Start animation loop
+      
+      // Default loaded fact check
+      showFact('yongin', document.getElementById('btn-fact-yongin'));
+    });
+
+  </script>
+</body>
+</html>
