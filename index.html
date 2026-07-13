@@ -776,7 +776,7 @@
         </div>
         <div class="badge-container">
           <div class="badge badge-live">공식 정책 데이터 엔진 연동</div>
-          <div class="badge">수도정비기본계획(부분변경) 2차</div>
+          <div class="badge">국가수도기본계획 (2025)</div>
           <div class="badge">2026 물계획 가이드라인</div>
         </div>
       </div>
@@ -892,7 +892,7 @@
           <div class="slider-wrapper">
             <input type="range" id="slide-dams" class="slider-dams" min="0" max="100" value="30">
           </div>
-          <div class="control-desc">홍수 조절 및 가뭄 대응용 14개 기후대응댐 신설을 통한 공급 (최대 일 40.0만 톤 확보)</div>
+          <div class="control-desc">홍수 조절 및 가뭄 대응용 14개 기후대응댐 신설을 통한 공급 (14개소 전체 공급능력 연 2.5억 톤 ≈ 일 68.5만 톤 중 메가프로젝트 배정분 40만 톤은 시나리오 가정값)<sup>[4]</sup></div>
         </div>
 
         <div class="control-group">
@@ -903,7 +903,7 @@
           <div class="slider-wrapper">
             <input type="range" id="slide-reuse" class="slider-reuse" min="0" max="100" value="40">
           </div>
-          <div class="control-desc">하수처리수 공업용수 재이용률 제고 및 고도 정화공정 도입 (최대 일 30.0만 톤 확보)</div>
+          <div class="control-desc">하수처리수 공업용수 재이용률 제고 및 고도 정화공정 도입 (K-water 공식 계획 최대 일 23.0만 톤 확보, 2030년까지)<sup>[2]</sup></div>
         </div>
       </div>
 
@@ -928,7 +928,7 @@
             <div class="slider-wrapper">
               <input type="range" id="slide-invest" min="100" max="1200" step="50" value="800">
             </div>
-            <div class="control-desc">용인 및 서남권 메가클러스터 예정 총 기업 투자 유치액 (목표 800조)</div>
+            <div class="control-desc">시나리오 입력값 (슬라이더 조정). 실제 발표 기준 용인 약 960조(SK 약 600조+삼성 약 360조), 서남권 약 800조원대<sup>[6]</sup></div>
           </div>
 
           <div class="control-group">
@@ -1042,7 +1042,7 @@
               Q_demand = N_fab * Q_fab_base * (L / 100) * ((1 - R_upw) / 0.25) * ((1 + U) / 1.30)
             </div>
             <p style="font-size:0.75rem; color:#64748b;">
-              ※ 팹 수(N_fab)와 적층 수(L)에 비례하며, 초순수 회수율(R_upw)이 높을수록 일일 수요량이 줄어드는 연쇄 역산 역학이 성립합니다. (기본값: 1팹당 일 4.5만 톤 표준소비 적용)
+              ※ 팹 수(N_fab)와 적층 수(L)에 비례하며, 초순수 회수율(R_upw)이 높을수록 일일 수요량이 줄어드는 연쇄 역산 역학이 성립합니다. (기본값: 1팹당 일 4.5만 톤은 회수 후 순보충수 기준의 <b>모델 가정값</b>이며, 정부·업계가 제시한 팹 1기당 총 취수 원단위는 약 13.7만 톤/일입니다.<sup>[3]</sup> 실측 총량 기준으로 보정하려면 base 값을 상향 조정하십시오.)
             </p>
           </div>
 
@@ -1061,7 +1061,7 @@
       <!-- TAB 1: FACT CHECK SHEET -->
       <div id="tab-factcheck" class="tab-content active">
         <div style="margin-bottom: 16px; font-size: 0.9rem; color: #94a3b8;">
-          국회입법조사처 공식 검토 수치와 특별대책지역의 법적 규제 사항을 매칭하는 인터랙티브 가이드입니다. 권역을 선택해 확인하세요.
+          기후에너지환경부·한국수자원공사 공식 계획 수치와 특별대책지역의 법적 규제 사항을 매칭하는 인터랙티브 가이드입니다. 권역을 선택해 확인하세요.
         </div>
         
         <div style="display: grid; grid-template-columns: 240px 1fr; gap: 20px;">
@@ -1150,8 +1150,8 @@
             <div class="fact-title" id="fact-title">수도권 (용인 반도체 클러스터)</div>
             
             <div class="fact-meta-item">
-              <span class="fact-meta-label">공식 요구 용수량:</span>
-              <span class="fact-meta-value">일 120.0만 톤 (2035년 최종 완료 기준)</span>
+              <span class="fact-meta-label">공식 통합용수공급 목표:</span>
+              <span class="fact-meta-value">일 107.2만 톤 (2035년 2단계 완료 기준) / 총 수요 추정 약 133만 톤<sup>[1][2]</sup></span>
             </div>
             <div class="fact-meta-item">
               <span class="fact-meta-label">주요 공급 취수원:</span>
@@ -1164,14 +1164,14 @@
             <div class="fact-meta-item">
               <span class="fact-meta-label">적용 법적 규제:</span>
               <span class="fact-meta-value">
-                한강수계 수질보전 특별대책지역 지정 고시 제1권역 규제, 수도법 제7조(상수원보호구역 내 행위 금지)
+                한강수계 수질보전 특별대책지역 지정 고시 제1권역 규제, 수도법 제7조(상수원보호구역 지정 등)<sup>[5]</sup>
               </span>
             </div>
             
             <div class="fact-law-tag">팔당 특별대책지역 제1권역 저촉 우려</div>
             
             <div class="fact-description" id="fact-desc">
-              용인 반도체 국가산단은 일 120만 톤의 방대한 유량이 공급되어야 하는 국가 전략 심장부입니다. 국회입법조사처의 공식 검토 보고서에 따르면, 팔당댐의 가용 용수가 한계에 달해 강원도 화천댐의 발전 방류수를 다목적 수자원으로 용도 전환(일 76.2만 톤)하는 대책이 최초로 수립되었습니다. 하지만 남한강 and 북한강에서 용인까지 이어지는 관로 건설이 가밀화 구역을 통과해야 하며, 수도법 상의 환경영향평가 및 규제 매칭 리스크가 잔존하고 있어 정책 진도율 모니터링이 필수적입니다.
+              용인 반도체 클러스터(국가산단·일반산단)의 총 공업용수 수요는 하루 약 133만 톤으로 추정되며, 정부는 통합용수공급사업으로 2034년까지 2.2조 원을 투입해 하루 107.2만 톤 공급을 목표로 하고 있습니다.<sup>[1][2]</sup> 기후에너지환경부·한국수자원공사 계획에 따르면, 팔당댐 가용 용수가 한계에 달해 1단계(2031년, 31만 톤/일) 팔당댐 전용관로에 이어 2단계(2035년, 76.2만 톤/일)로 화천댐 하천수 등을 활용하는 방안이 수립되었습니다.<sup>[1]</sup> 다만 남한강과 북한강에서 용인까지 이어지는 관로 건설이 규제 구역을 통과해야 하며, 수도법상의 환경영향평가 및 규제 리스크가 잔존하고 있어 정책 진도율 모니터링이 필수적입니다.
             </div>
           </div>
         </div>
@@ -1230,8 +1230,18 @@
 
     <!-- FOOTER -->
     <footer>
-      대한민국 환경부 · 국토교통부 · 한국수자원공사(K-water) 실무 대시보드 시뮬레이터<br>
-      © 2026 국가 메가프로젝트 전국 수자원 수급 안보 시뮬레이션 시스템. All Rights Reserved.
+      <div style="max-width:1100px; margin:0 auto 18px; text-align:left; font-size:0.78rem; line-height:1.6; color:#94a3b8;">
+        <div style="font-weight:700; color:#cbd5e1; margin-bottom:6px;">출처 및 데이터 근거 (Sources)</div>
+        <div>[1] 화천댐 76.2만 톤·통합용수공급사업(107.2만 톤/일, 1·2단계, 2.2조 원): 기후에너지환경부, "용인 반도체 클러스터 용수 공급 사업 본격화" 보도자료. me.go.kr</div>
+        <div>[2] 용인 총 필요량 약 133만 톤/일 및 하수 재이용수 23만 톤(전체의 22%, 2030년까지): 산업통상자원부 클러스터 인프라 구축 협약(2024.11) / 헤럴드경제(2025.4.16), 한국수자원공사</div>
+        <div>[3] 팹 1기당 취수 원단위 약 13.7만 톤/일: 아시아경제(2026.6.30) "800조 호남 반도체 클러스터 물 부족 우려" 정부·산업계 인용</div>
+        <div>[4] 기후대응댐 후보지 14곳(다목적 3·홍수조절 7·용수전용 4, 연간 2.5억 톤 공급능력): 환경부 "기후대응댐 후보지(안) 14곳 발표" 보도자료(2024.7.30)</div>
+        <div>[5] 수도법 제7조(상수원보호구역 지정 등): 국가법령정보센터. law.go.kr</div>
+        <div>[6] 국가 공업용수 수급 전망(2040년 수요 804.8만 톤·부족 약 55만 톤): 기후에너지환경부 국가수도기본계획(2025.12). 용인 투자액: SK하이닉스 약 600조·삼성전자 약 360조</div>
+        <div style="margin-top:8px; color:#64748b; font-style:italic;">※ 본 시뮬레이터는 정책 이해용 모델이며, 슬라이더 기본값 중 일부(팹당 소비 원단위, 권역별 배정량, 투자액)는 실측이 아닌 시나리오 가정값입니다. 실제 정부 공식 수치는 위 출처를 따릅니다.</div>
+      </div>
+      대한민국 기후에너지환경부 · 국토교통부 · 한국수자원공사(K-water) 정책 이해용 시뮬레이터 (비공식)<br>
+      © 2026 국가 메가프로젝트 전국 수자원 수급 안보 시뮬레이션 시스템.
     </footer>
 
   </div>
@@ -1244,12 +1254,12 @@
     const factSheets = {
       yongin: {
         title: "수도권 (용인 반도체 메가 클러스터)",
-        demand: "일 120.0만 톤 (2035년 최종 완료 기준)",
-        sources: "팔당댐 하천수 (여유량), 화천댐 다목적 발전 방류수 (실제 전환)",
+        demand: "공급 목표 일 107.2만 톤 (2035년 2단계 완료) / 총 수요 추정 약 133만 톤",
+        sources: "팔당댐 하천수 (1단계), 화천댐 하천수 등 (2단계), 하수 재이용수 23만 톤",
         risk: "도수 관로 복선화 지연 시 관로 파손에 따른 전 팹 가동 중단(셧다운) 위기 상존",
-        law: "한강수계 수질보전 특별대책지역 지정 고시 제1권역 규제, 수도법 제7조(상수원보호구역 내 행위 금지)",
+        law: "한강수계 수질보전 특별대책지역 지정 고시 제1권역 규제, 수도법 제7조(상수원보호구역 지정 등)",
         tag: "팔당 특별대책지역 제1권역 저촉 우려",
-        desc: "용인 반도체 국가산단은 일 120만 톤의 방대한 유량이 공급되어야 하는 국가 전략 심장부입니다. 국회입법조사처의 공식 검토 보고서에 따르면, 팔당댐의 가용 용수가 한계에 달해 강원도 화천댐의 발전 방류수를 다목적 수자원으로 용도 전환(일 76.2만 톤)하는 대책이 최초로 수립되었습니다. 하지만 남한강과 북한강에서 용인까지 이어지는 관로 건설이 가밀화 구역을 통과해야 하며, 수도법 상의 환경영향평가 및 규제 매칭 리스크가 잔존하고 있어 정책 진도율 모니터링이 필수적입니다."
+        desc: "용인 반도체 클러스터(국가산단·일반산단)의 총 공업용수 수요는 하루 약 133만 톤으로 추정되며, 정부는 통합용수공급사업으로 2034년까지 2.2조 원을 투입해 하루 107.2만 톤 공급을 목표로 하고 있습니다. 기후에너지환경부·한국수자원공사 계획에 따르면, 팔당댐 가용 용수가 한계에 달해 1단계(2031년, 31만 톤/일) 팔당댐 전용관로에 이어 2단계(2035년, 76.2만 톤/일)로 화천댐 하천수 등을 활용하는 방안이 수립되었습니다. 다만 남한강과 북한강에서 용인까지 이어지는 관로 건설이 규제 구역을 통과해야 하며, 수도법상의 환경영향평가 및 규제 리스크가 잔존하고 있어 정책 진도율 모니터링이 필수적입니다."
       },
       chungcheongHub: {
         title: "충청권 (이차전지/바이오 클러스터)",
@@ -1578,7 +1588,7 @@
       const baseSupplyTons = 1000000;
       const hwacheonMaxTons = 762000;
       const damsMaxTons = 400000;
-      const reuseMaxTons = 300000;
+      const reuseMaxTons = 230000; // K-water 공식 계획 23만 톤/일 (2030년까지, 전체 107.2만 톤의 22%)
       
       const hwacheonSupply = hwacheonMaxTons * (state.slideHwacheonVal / 100);
       const damsSupply = damsMaxTons * (state.slideDamsVal / 100);
@@ -2296,3 +2306,4 @@
   </script>
 </body>
 </html>
+
