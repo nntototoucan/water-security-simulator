@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   
   <style>
     /* --------------------------------------------------
@@ -307,8 +309,31 @@
       background: transparent;
     }
 
+    #realMap { width:100%; height:660px; background:#08111f; z-index:1; }
+    #mapCanvas { display:none; }
+    .leaflet-container { font-family:var(--font-display); }
+    .leaflet-tile-pane { filter:grayscale(1) brightness(.42) contrast(1.15); opacity:.24; }
+    .leaflet-control-layers, .leaflet-control-zoom a { background:#0f172a !important; color:#e2e8f0 !important; border-color:rgba(255,255,255,.15) !important; }
+    .leaflet-control-layers { color:#cbd5e1; }
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip { background:rgba(8,15,30,.97); color:#cbd5e1; }
+    .leaflet-popup-content-wrapper { border:1px solid rgba(56,189,248,.35); border-radius:12px; }
+    .leaflet-popup-content { margin:14px 16px; line-height:1.5; }
+    .leaflet-popup-content a { color:#7dd3fc; }
+    .leaflet-tooltip { background:rgba(8,15,30,.94); color:#f8fafc; border:1px solid rgba(255,255,255,.22); box-shadow:0 2px 8px rgba(0,0,0,.55); font-size:11px; font-weight:700; padding:3px 6px; }
+    .leaflet-tooltip-top::before { border-top-color:rgba(8,15,30,.94); }
+    .map-pin { width:20px;height:20px;border-radius:50%;border:3px solid #f8fafc;box-shadow:0 0 0 3px rgba(8,17,31,.75),0 0 16px currentColor; }
+    .map-pin.dam { clip-path:polygon(50% 0,100% 100%,0 100%); border-radius:2px; }
+    .map-pin.weir { border-radius:3px; }
+    .map-pin.hub { transform:rotate(45deg); border-radius:4px; }
+    .map-pin.military { border-radius:50% 50% 50% 0; transform:rotate(-45deg); }
+    .map-name-label { background:transparent; border:0; box-shadow:none; color:#f8fafc; font-size:10px; font-weight:700; text-shadow:-1px -1px 2px #020617,1px 1px 2px #020617,0 0 5px #020617; padding:0; }
+    .map-name-label::before { display:none; }
+    .water-route { animation:routeFlow 1.25s linear infinite; }
+    @keyframes routeFlow { to { stroke-dashoffset:-30; } }
+
     .map-legend {
       position: absolute;
+      z-index: 5;
       bottom: 15px;
       left: 15px;
       background: rgba(15, 23, 42, 0.85);
@@ -343,6 +368,33 @@
       height: 3px;
       display: inline-block;
     }
+
+    .map-popup {
+      position: absolute;
+      z-index: 8;
+      width: min(310px, calc(100% - 24px));
+      background: rgba(8, 15, 30, 0.96);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: #cbd5e1;
+      box-shadow: 0 14px 34px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      pointer-events: auto;
+      display: none;
+    }
+
+    .map-popup.visible { display: block; animation: fadeIn .18s ease-out; }
+    .map-popup.military { border-color: rgba(248, 113, 113, .55); }
+    .map-popup-title { color: #fff; font-weight: 700; font-size: .98rem; padding-right: 24px; }
+    .map-popup-type { color: #7dd3fc; font-size: .72rem; font-weight: 700; margin: 3px 0 8px; }
+    .map-popup.military .map-popup-type { color: #fca5a5; }
+    .map-popup-summary { font-size: .8rem; line-height: 1.55; }
+    .map-popup-meta { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.08); font-size: .74rem; line-height: 1.55; color: #94a3b8; }
+    .map-popup a { color: #7dd3fc; text-decoration: none; }
+    .map-popup-close { position:absolute; right:9px; top:7px; border:0; background:transparent; color:#94a3b8; cursor:pointer; font-size:1.1rem; }
+    .layer-note { position:absolute; z-index:6; top:12px; left:55px; right:12px; font-size:.7rem; color:#fca5a5; background:rgba(69,10,10,.82); border:1px solid rgba(248,113,113,.25); border-radius:7px; padding:7px 10px; display:none; }
+    .layer-note.visible { display:block; }
 
     /* --------------------------------------------------
        SLIDERS & CONTROLS
@@ -833,9 +885,10 @@
             <div class="icon-container">
               <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
             </div>
-            실시간 메가프로젝트 용수망 배정 캔버스 Map
+            전국 메가프로젝트 수자원 인프라 지도
           </div>
           <div class="header-controls">
+            <button class="btn-action" id="btn-toggle-military">군부지 토양오염 레이어</button>
             <button class="btn-action" id="btn-toggle-particles">파티클 토글</button>
             <button class="btn-action" id="btn-reset-sliders">초기화</button>
           </div>
@@ -849,9 +902,19 @@
 
         <!-- Canvas Map -->
         <div class="map-container">
+          <div id="realMap" aria-label="전국 수자원 및 군부지 토양오염 실제 지도"></div>
           <canvas id="mapCanvas" width="560" height="660"></canvas>
+          <div class="layer-note" id="military-layer-note">● 최근 10년 내 오염 확인·분쟁이 공개되고 정화비용 또는 손해배상액이 10억 원 이상인 군부지 사례 · 광주 군공항은 잠재 리스크 별도 표시</div>
+          <div class="map-popup" id="map-popup" role="dialog" aria-live="polite">
+            <button class="map-popup-close" id="map-popup-close" aria-label="닫기">×</button>
+            <div class="map-popup-title" id="map-popup-title"></div>
+            <div class="map-popup-type" id="map-popup-type"></div>
+            <div class="map-popup-summary" id="map-popup-summary"></div>
+            <div class="map-popup-meta" id="map-popup-meta"></div>
+          </div>
           <div class="map-legend">
             <div class="legend-item"><span class="legend-color" style="background:#38bdf8;box-shadow:0 0 6px #38bdf8;"></span> 취수원 (댐)</div>
+            <div class="legend-item"><span class="legend-color" style="background:#f87171;box-shadow:0 0 6px #ef4444;"></span> 군부지 토양오염·잠재 리스크</div>
             <div class="legend-item"><span class="legend-color" style="background:#a855f7;box-shadow:0 0 6px #a855f7;"></span> 산업 단지 / AI 허브</div>
             <div class="legend-item"><span class="legend-line" style="background:rgba(56,189,248,0.5)"></span> 연계 도수 관로망</div>
             <div class="legend-item"><span class="legend-color" style="background:#60a5fa;scale:0.6"></span> 초순수 수동 유체 파티클</div>
@@ -1479,6 +1542,7 @@
       scenario: 'future', // 'current' or 'future'
       savedFutureState: null,
       selectedNode: 'yongin', // highlighted node on canvas map
+      showMilitaryLayer: false,
 
       // Calculated intermediate
       fabsNum: 0,
@@ -1781,6 +1845,66 @@
       honamHub: { name: "호남 AI 센터", x: 160, y: 390, type: "hub", baseGlow: 10, size: 6 },
       yeongnamHub: { name: "영남 AI 센터", x: 330, y: 360, type: "hub", baseGlow: 10, size: 6 }
     };
+
+    // 공개 보도에서 최근 10년 내 오염 확인·분쟁 및 10억원 이상 비용이 확인되는 사례 중심.
+    // 금액은 부지 매입가격이 아니라 정화비용 또는 오염 관련 손해배상액이다.
+    const militarySites = {
+      unCommand: { name:"용산 유엔사 부지", x:208, y:128, type:"military", year:"2019·2025", cost:"정화비용 약 100억 원 / 손해배상 요구 118.7억 원", pollutant:"유류계 오염", status:"매각 후 정화비용 책임 분쟁", source:"https://www.khan.co.kr/article/201903140600135", summary:"민간 매각 뒤 오염 정화비용 부담이 쟁점이 된 사례입니다. 대규모 군부지 개발에서는 매입 전 정밀조사와 책임·비용 배분이 핵심임을 보여줍니다." },
+      campWalker: { name:"대구 캠프워커", x:340, y:328, type:"military", year:"2021", cost:"정화비용 약 47억 원", pollutant:"토양·지하수 오염", status:"반환부지 정화비용 국내 부담", source:"https://www.pn.or.kr/news/articleView.html?idxno=19141", summary:"반환된 군부지의 정화비용이 수십억 원에 이른 사례입니다. 개발비 외에 환경부채가 별도로 발생할 수 있음을 보여줍니다." },
+      pyeongtaek: { name:"평택 미군기지 주변", x:212, y:185, type:"military", year:"2024", cost:"국가 상대 청구 약 16억 원", pollutant:"중금속·유류", status:"지자체 정화 후 국가 상대 소송", source:"https://www.pttimes.com/news/articleView.html?idxno=72192", summary:"기지 주변 민간 토지까지 오염이 확산되어 지자체가 먼저 정화한 사례입니다. 부지 경계 밖 토양·지하수 이동경로까지 조사할 필요가 있습니다." },
+      chuncheon: { name:"춘천 옛 군부대 부지", x:267, y:105, type:"military", year:"2023", cost:"손해배상 청구 약 16.8억 원", pollutant:"군부대 이전부지 토양오염", status:"부실 정화 여부 관련 소송", source:"https://kwnews.co.kr/article/202305211326023", summary:"군부대 이전 뒤 건축공사 과정에서 오염물질이 발견되어 분쟁으로 이어진 사례입니다. 정화 완료 확인만으로 개발 리스크가 사라지지 않을 수 있습니다." },
+      uijeongbu: { name:"의정부 반환 미군기지", x:208, y:100, type:"military", year:"2018·2020", cost:"정화비용 100억 원 이상 추산", pollutant:"석유계총탄화수소(TPH)", status:"정화 후 재오염 확인·비용 분쟁", source:"https://view.asiae.co.kr/article/2020120711531922468", summary:"정화가 끝난 것으로 알려진 부지에서 기준 초과 유류 오염이 다시 확인된 사례입니다. 개발 전 검증조사와 정화 성과 확인이 중요합니다." },
+      gwangjuAirbase: { name:"광주 군공항 이전부지", x:153, y:401, type:"military-potential", year:"개발 전 조사 필요", cost:"비용 미산정", pollutant:"항공유·중금속 등 잠재 오염원", status:"오염 확정 사례가 아닌 선제 조사 대상", source:"https://www.gjdream.com/news/articleView.html?idxno=435445", summary:"서남권 반도체·AI 개발 후보지와 연계해 살펴볼 잠재 리스크입니다. 현재 공개자료만으로 오염을 확정할 수 없으므로, 토지 매입·계획 확정 전에 토양과 지하수 정밀조사가 필요합니다." }
+    };
+
+    const geoLocations = {
+      hwacheon:[38.1166,127.7762], soyanggang:[37.9475,127.8143], paldang:[37.5258,127.2783], chungju:[37.0058,127.9926],
+      daecheong:[36.4773,127.4800], yongdam:[35.9452,127.5281], andong:[36.5847,128.7713], imha:[36.5393,128.8834],
+      hapcheon:[35.5315,128.0315], juam:[35.0606,127.2371], yeojubo:[37.3272,127.6095], sejongbo:[36.4690,127.2690],
+      gangjeongbo:[35.8410,128.4650], seungchonbo:[35.0667,126.7600], yongin:[37.1600,127.2200], chungcheongHub:[36.6500,127.4900],
+      honamHub:[35.1260,126.8090], yeongnamHub:[35.8700,128.6000], unCommand:[37.5347,126.9870], campWalker:[35.8466,128.5914],
+      pyeongtaek:[36.9620,127.0310], chuncheon:[37.8570,127.7350], uijeongbu:[37.7448,127.0375], gwangjuAirbase:[35.1236,126.8099]
+    };
+
+    let realMap, militaryLayer;
+    function pinIcon(color, kind) { return L.divIcon({className:'',html:`<div class="map-pin ${kind}" style="background:${color};color:${color}"></div>`,iconSize:[20,20],iconAnchor:[10,10]}); }
+    function leafletPopup(key, item) {
+      const fact=factSheets[key], military=item.type.indexOf('military')===0;
+      if(military) return `<div class="map-popup-title">${item.name}</div><div class="map-popup-type">${item.type==='military-potential'?'군부지 잠재 리스크 · 오염 미확정':'군부지 토양오염 사례'}</div><div class="map-popup-summary">${item.summary}</div><div class="map-popup-meta"><b>확인 시점</b> ${item.year}<br><b>오염물질</b> ${item.pollutant}<br><b>확인 금액</b> ${item.cost}<br><b>상태</b> ${item.status}<br><a href="${item.source}" target="_blank" rel="noopener">근거자료 보기 ↗</a></div>`;
+      return `<div class="map-popup-title">${item.name}</div><div class="map-popup-type">${item.type==='source'?'댐 · 주요 취수원':item.type==='weir'?'보 · 수위조절 인프라':'산업 수요 거점'}</div><div class="map-popup-summary">${fact?fact.desc:''}</div><div class="map-popup-meta"><b>공급·수요</b> ${fact?(fact.supply||fact.demand):'-'}<br><b>왜 중요한가</b> ${fact?fact.tag:'-'}<br><b>핵심 쟁점</b> ${fact?fact.risk:'-'}</div>`;
+    }
+    function initRealMap() {
+      if(!window.L||realMap) return;
+      realMap=L.map('realMap').setView([36.25,127.8],7);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap contributors'}).addTo(realMap);
+      fetch('https://cdn.jsdelivr.net/gh/southkorea/southkorea-maps@master/kostat/2018/json/skorea-provinces-2018-geo.json')
+        .then(r=>r.json()).then(data=>L.geoJSON(data,{style:{color:'#64748b',weight:1.35,opacity:.95,fill:false,fillOpacity:0},interactive:false}).addTo(realMap)).catch(()=>{});
+      const dams=L.layerGroup(), weirs=L.layerGroup(), hubs=L.layerGroup(), routes=L.layerGroup();
+      Object.keys(nodes).forEach(key=>{const item=nodes[key],loc=geoLocations[key];if(!loc)return;const layer=item.type==='source'?dams:item.type==='weir'?weirs:hubs;const kind=item.type==='source'?'dam':item.type==='weir'?'weir':'hub';L.marker(loc,{icon:pinIcon(item.type==='source'?'#22d3ee':item.type==='weir'?'#fbbf24':'#c084fc',kind),zIndexOffset:item.type==='hub'?300:200}).bindTooltip(item.name,{permanent:true,className:'map-name-label',direction:'top',offset:[0,-12]}).bindPopup(leafletPopup(key,item),{maxWidth:350}).on('click',()=>{state.selectedNode=key;if(factSheets[key])showFact(key);}).addTo(layer);});
+      [['hwacheon','paldang','yongin'],['chungju','yongin'],['daecheong','chungcheongHub'],['juam','honamHub'],['andong','yeongnamHub'],['hapcheon','yeongnamHub']].forEach(route=>L.polyline(route.map(k=>geoLocations[k]),{color:'#38bdf8',weight:3.5,opacity:.9,dashArray:'8 7',className:'water-route'}).addTo(routes));
+      militaryLayer=L.layerGroup();Object.keys(militarySites).forEach(key=>{const item=militarySites[key];L.marker(geoLocations[key],{icon:pinIcon(item.type==='military-potential'?'#f59e0b':'#ef4444','military'),zIndexOffset:400}).bindTooltip(item.name,{permanent:true,className:'map-name-label',direction:'top',offset:[0,-12]}).bindPopup(leafletPopup(key,item),{maxWidth:360}).addTo(militaryLayer);});
+      dams.addTo(realMap);weirs.addTo(realMap);hubs.addTo(realMap);routes.addTo(realMap);
+      L.control.layers(null,{'댐':dams,'보':weirs,'산업·AI 거점':hubs,'용수 연계망':routes,'군부지 토양오염·잠재 리스크':militaryLayer},{collapsed:false}).addTo(realMap);
+    }
+
+    const popup = document.getElementById('map-popup');
+    function showMapPopup(key, item, clickX, clickY) {
+      const isMilitary = item.type.indexOf('military') === 0;
+      popup.classList.toggle('military', isMilitary);
+      document.getElementById('map-popup-title').innerText = item.name;
+      document.getElementById('map-popup-type').innerText = isMilitary ? (item.type === 'military-potential' ? '군부지 잠재 리스크 · 오염 미확정' : '군부지 토양오염 사례') : (item.type === 'source' ? '댐 · 주요 취수원' : item.type === 'weir' ? '보 · 수위조절 인프라' : '산업 수요 거점');
+      const fact = factSheets[key];
+      document.getElementById('map-popup-summary').innerText = isMilitary ? item.summary : (fact ? fact.desc : '해당 거점의 상세 정보를 아래 팩트시트에서 확인할 수 있습니다.');
+      document.getElementById('map-popup-meta').innerHTML = isMilitary
+        ? `<b>확인 시점</b> ${item.year}<br><b>오염물질</b> ${item.pollutant}<br><b>확인 금액</b> ${item.cost}<br><b>상태</b> ${item.status}<br><a href="${item.source}" target="_blank" rel="noopener">근거자료 보기 ↗</a>`
+        : fact ? `<b>공급·수요</b> ${fact.supply || fact.demand}<br><b>왜 중요한가</b> ${fact.tag}<br><b>핵심 쟁점</b> ${fact.risk}` : '';
+      const container = canvas.parentElement.getBoundingClientRect();
+      const renderedX = clickX * (canvas.clientWidth / canvas.width);
+      const renderedY = clickY * (canvas.clientHeight / canvas.height);
+      popup.style.left = Math.max(12, Math.min(renderedX + 14, container.width - 322)) + 'px';
+      popup.style.top = Math.max(12, Math.min(renderedY + 14, container.height - 260)) + 'px';
+      popup.classList.add('visible');
+    }
 
     // Pipelines (Source -> Destination connections)
     const pipelines = [
@@ -2120,6 +2244,27 @@
         ctx.fillText(node.name, node.x, node.y - 14);
         ctx.shadowBlur = 0; // reset
       });
+
+      if (state.showMilitaryLayer) {
+        Object.values(militarySites).forEach(site => {
+          const potential = site.type === 'military-potential';
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(site.x, site.y, potential ? 7 : 6, 0, Math.PI * 2);
+          ctx.fillStyle = potential ? 'rgba(251,191,36,.28)' : 'rgba(239,68,68,.3)';
+          ctx.strokeStyle = potential ? '#fbbf24' : '#f87171';
+          ctx.lineWidth = 2;
+          ctx.shadowColor = potential ? '#f59e0b' : '#ef4444';
+          ctx.shadowBlur = 10;
+          ctx.fill(); ctx.stroke();
+          ctx.shadowBlur = 0;
+          ctx.font = 'bold 8px Outfit, Noto Sans KR';
+          ctx.fillStyle = potential ? '#fde68a' : '#fecaca';
+          ctx.textAlign = 'left';
+          ctx.fillText(site.name, site.x + 9, site.y + 3);
+          ctx.restore();
+        });
+      }
     }
 
     function animate() {
@@ -2256,6 +2401,15 @@
       btn.innerText = state.animateFlow ? "파티클 토글" : "파티클 토글";
     });
 
+    document.getElementById('btn-toggle-military').addEventListener('click', function() {
+      state.showMilitaryLayer = !state.showMilitaryLayer;
+      this.classList.toggle('active', state.showMilitaryLayer);
+      document.getElementById('military-layer-note').classList.toggle('visible', state.showMilitaryLayer);
+      if (realMap && militaryLayer) state.showMilitaryLayer ? militaryLayer.addTo(realMap) : realMap.removeLayer(militaryLayer);
+      popup.classList.remove('visible');
+    });
+    document.getElementById('map-popup-close').addEventListener('click', () => popup.classList.remove('visible'));
+
     // Canvas Mouse Click handler to select nodes and show details
     canvas.addEventListener('click', function(event) {
       const rect = canvas.getBoundingClientRect();
@@ -2270,6 +2424,14 @@
       
       let closestNode = null;
       let minDistance = 25; // Click detection radius
+
+      if (state.showMilitaryLayer) {
+        Object.keys(militarySites).forEach(key => {
+          const site = militarySites[key];
+          const dist = Math.sqrt((clickX - site.x) ** 2 + (clickY - site.y) ** 2);
+          if (dist < minDistance) { minDistance = dist; closestNode = { key, ...site }; }
+        });
+      }
       
       Object.keys(nodes).forEach(key => {
         const node = nodes[key];
@@ -2281,6 +2443,8 @@
       });
       
       if (closestNode) {
+        showMapPopup(closestNode.key, closestNode, clickX, clickY);
+        if (closestNode.type.indexOf('military') === 0) return;
         // Automatically switch tab if formulas tab is active
         const factCheckTabBtn = document.querySelector('.tabs-header button:first-child');
         if (factCheckTabBtn && !factCheckTabBtn.classList.contains('active')) {
@@ -2298,6 +2462,7 @@
     window.addEventListener('load', () => {
       updateCalculations();
       animate(); // Start animation loop
+      initRealMap();
       
       // Default loaded fact check
       showFact('yongin', document.getElementById('btn-fact-yongin'));
@@ -2306,4 +2471,3 @@
   </script>
 </body>
 </html>
-
