@@ -236,6 +236,19 @@
     }
 
     /* --------------------------------------------------
+       SUPPLY-DEMAND BALANCE BARS
+       -------------------------------------------------- */
+    .balance-panel { margin-bottom: 30px; padding: 20px 24px; }
+    .balance-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .balance-label { width: 58px; font-size: 0.8rem; color: #94a3b8; text-align: right; flex-shrink: 0; }
+    .balance-track { flex: 1; height: 24px; display: flex; background: rgba(15, 23, 42, 0.5); border-radius: 6px; overflow: hidden; }
+    .balance-seg { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 700; color: #ffffff; white-space: nowrap; overflow: hidden; margin-right: 2px; min-width: 0; }
+    .balance-seg:last-child { margin-right: 0; }
+    .balance-total { width: 110px; font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; color: #ffffff; flex-shrink: 0; }
+    .balance-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 0.72rem; color: #94a3b8; }
+    .balance-legend .chip { width: 9px; height: 9px; border-radius: 2px; display: inline-block; margin-right: 5px; vertical-align: -1px; }
+
+    /* --------------------------------------------------
        MAIN LAYOUT PANEL GRID
        -------------------------------------------------- */
     .main-grid {
@@ -329,6 +342,7 @@
     .map-name-label { background:transparent; border:0; box-shadow:none; color:#f8fafc; font-size:10px; font-weight:700; text-shadow:-1px -1px 2px #020617,1px 1px 2px #020617,0 0 5px #020617; padding:0; }
     .map-name-label::before { display:none; }
     .water-route { animation:routeFlow 1.25s linear infinite; }
+    .no-route-flow .water-route { animation:none; }
     @keyframes routeFlow { to { stroke-dashoffset:-30; } }
 
     .map-legend {
@@ -367,6 +381,13 @@
       width: 14px;
       height: 3px;
       display: inline-block;
+    }
+
+    .legend-pin {
+      width: 10px;
+      height: 10px;
+      display: inline-block;
+      flex-shrink: 0;
     }
 
     .map-popup {
@@ -827,7 +848,7 @@
           <p>National Mega-Project Water Security Interactive Simulator for Policy Practitioners</p>
         </div>
         <div class="badge-container">
-          <div class="badge badge-live">공식 정책 데이터 엔진 연동</div>
+          <div class="badge">정부 공식 계획 수치 기반 · 정적 데이터</div>
           <div class="badge">국가수도기본계획 (2025)</div>
           <div class="badge">2026 물계획 가이드라인</div>
         </div>
@@ -875,6 +896,25 @@
       </div>
     </div>
 
+    <!-- SUPPLY-DEMAND BALANCE BARS -->
+    <div class="panel balance-panel">
+      <div class="panel-header" style="margin-bottom: 14px;">
+        <div class="panel-title" style="font-size: 1.05rem;">수요·공급 구성 비교 <span style="font-size:0.75rem; font-weight:400; color:#64748b;">공통 스케일 · 만 톤/일 · 슬라이더 연동</span></div>
+        <div class="metric-status" id="balance-gap-note"></div>
+      </div>
+      <div class="balance-row">
+        <div class="balance-label">수요</div>
+        <div class="balance-track" id="bar-demand"></div>
+        <div class="balance-total" id="bar-demand-total">0</div>
+      </div>
+      <div class="balance-row">
+        <div class="balance-label">공급</div>
+        <div class="balance-track" id="bar-supply"></div>
+        <div class="balance-total" id="bar-supply-total">0</div>
+      </div>
+      <div class="balance-legend" id="balance-legend"></div>
+    </div>
+
     <!-- MAIN INTERACTIVE CONTAINER -->
     <div class="main-grid">
       
@@ -889,7 +929,7 @@
           </div>
           <div class="header-controls">
             <button class="btn-action" id="btn-toggle-military">군부지 토양오염 레이어</button>
-            <button class="btn-action" id="btn-toggle-particles">파티클 토글</button>
+            <button class="btn-action active" id="btn-toggle-particles">관로 흐름</button>
             <button class="btn-action" id="btn-reset-sliders">초기화</button>
           </div>
         </div>
@@ -913,11 +953,12 @@
             <div class="map-popup-meta" id="map-popup-meta"></div>
           </div>
           <div class="map-legend">
-            <div class="legend-item"><span class="legend-color" style="background:#38bdf8;box-shadow:0 0 6px #38bdf8;"></span> 취수원 (댐)</div>
-            <div class="legend-item"><span class="legend-color" style="background:#f87171;box-shadow:0 0 6px #ef4444;"></span> 군부지 토양오염·잠재 리스크</div>
-            <div class="legend-item"><span class="legend-color" style="background:#a855f7;box-shadow:0 0 6px #a855f7;"></span> 산업 단지 / AI 허브</div>
-            <div class="legend-item"><span class="legend-line" style="background:rgba(56,189,248,0.5)"></span> 연계 도수 관로망</div>
-            <div class="legend-item"><span class="legend-color" style="background:#60a5fa;scale:0.6"></span> 초순수 수동 유체 파티클</div>
+            <div class="legend-item"><span class="legend-pin" style="background:#22d3ee;clip-path:polygon(50% 0,100% 100%,0 100%);"></span> 댐 (주요 취수원)</div>
+            <div class="legend-item"><span class="legend-pin" style="background:#fbbf24;border-radius:2px;"></span> 보 (수위 조절)</div>
+            <div class="legend-item"><span class="legend-pin" style="background:#c084fc;transform:rotate(45deg);border-radius:2px;"></span> 산업 단지 / AI 거점</div>
+            <div class="legend-item"><span class="legend-pin" style="background:#f87171;border-radius:50% 50% 50% 0;transform:rotate(-45deg);"></span> 군부지 토양오염 확인 사례</div>
+            <div class="legend-item"><span class="legend-pin" style="background:#f59e0b;border-radius:50% 50% 50% 0;transform:rotate(-45deg);"></span> 군부지 잠재 리스크</div>
+            <div class="legend-item"><span class="legend-line" style="background:repeating-linear-gradient(90deg,#38bdf8 0 8px,transparent 8px 14px);"></span> 용수 연계 관로망</div>
           </div>
         </div>
 
@@ -927,13 +968,13 @@
             <div class="icon-container" style="background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.2);color:var(--color-success)">
               <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </div>
-            국가 법정 계획 수급 충분성 검증기 (정부 정책 수단)
+            정부 공급 대책 진도율 시뮬레이션
           </div>
         </div>
         
         <!-- Explanation Note for Policy Sliders -->
         <div style="background: rgba(14, 165, 233, 0.05); border: 1px dashed rgba(56, 189, 248, 0.2); padding: 10px 12px; border-radius: 8px; font-size: 0.78rem; color: #94a3b8; line-height: 1.45; margin-bottom: 16px;">
-          💡 <strong>대책 진도율(%)의 의미:</strong> 각 수치의 백분율은 정부 국책 수자원 확보 대책의 <strong>이행 완공율(공정 진도율)</strong>을 뜻합니다. 기본 탑재된 수치(50%, 30%, 40%)는 대책이 추진 중인 가상 이행 단계를 나타낸 것이며, 슬라이더를 직접 좌우로 조절하여 <strong>"대책 완공(100%) 시 안보 확보 효과"</strong>와 <strong>"사업 지연(낮은 %) 시 물 부족 위기(블링킹 경보)"</strong>를 상호 대조 분석할 수 있습니다.
+          <strong>대책 진도율(%)의 의미:</strong> 각 백분율은 정부 수자원 확보 대책의 <strong>이행 진도율</strong>입니다. 기본값(50%, 30%, 40%)은 가상의 추진 단계이며, 슬라이더를 조절해 대책 완공(100%) 시 효과와 사업 지연 시 물 부족 위험을 비교할 수 있습니다.
         </div>
 
         <div class="control-group">
@@ -991,7 +1032,7 @@
             <div class="slider-wrapper">
               <input type="range" id="slide-invest" min="100" max="1200" step="50" value="800">
             </div>
-            <div class="control-desc">시나리오 입력값 (슬라이더 조정). 실제 발표 기준 용인 약 960조(SK 약 600조+삼성 약 360조), 서남권 약 800조원대<sup>[6]</sup></div>
+            <div class="control-desc">시나리오 입력값 (슬라이더 조정). 실제 발표 기준 용인 약 960조(SK 약 600조+삼성 약 360조), 서남권 약 800조원대<sup>[3]</sup></div>
           </div>
 
           <div class="control-group">
@@ -1098,14 +1139,14 @@
           <!-- Equation Box -->
           <div class="math-card" style="margin-top:0;">
             <div style="font-size:0.8rem; font-weight:600; color:#94a3b8; display:flex; justify-content:space-between; align-items:center;">
-              <span>임베딩 공학 방정식</span>
+              <span>적용 수식</span>
               <span style="font-size:0.7rem; color:var(--color-primary);">System Mass Balance Model</span>
             </div>
             <div class="math-formula">
               Q_demand = N_fab * Q_fab_base * (L / 100) * ((1 - R_upw) / 0.25) * ((1 + U) / 1.30)
             </div>
             <p style="font-size:0.75rem; color:#64748b;">
-              ※ 팹 수(N_fab)와 적층 수(L)에 비례하며, 초순수 회수율(R_upw)이 높을수록 일일 수요량이 줄어드는 연쇄 역산 역학이 성립합니다. (기본값: 1팹당 일 4.5만 톤은 회수 후 순보충수 기준의 <b>모델 가정값</b>이며, 정부·업계가 제시한 팹 1기당 총 취수 원단위는 약 13.7만 톤/일입니다.<sup>[3]</sup> 실측 총량 기준으로 보정하려면 base 값을 상향 조정하십시오.)
+              ※ 팹 수(N_fab)와 적층 수(L)에 비례하고, 초순수 회수율(R_upw)이 높을수록 일일 수요량이 줄어듭니다. (기본값: 1팹당 일 4.5만 톤은 회수 후 순보충수 기준의 <b>모델 가정값</b>이며, 정부·업계가 제시한 팹 1기당 총 취수 원단위는 약 13.7만 톤/일입니다.<sup>[3]</sup> 실측 총량 기준으로 보정하려면 base 값을 상향 조정하십시오.)
             </p>
           </div>
 
@@ -1124,7 +1165,7 @@
       <!-- TAB 1: FACT CHECK SHEET -->
       <div id="tab-factcheck" class="tab-content active">
         <div style="margin-bottom: 16px; font-size: 0.9rem; color: #94a3b8;">
-          기후에너지환경부·한국수자원공사 공식 계획 수치와 특별대책지역의 법적 규제 사항을 매칭하는 인터랙티브 가이드입니다. 권역을 선택해 확인하세요.
+          권역·시설별 팩트시트입니다. 출처 표기가 있는 공식 계획 수치와 모델 가정값(라벨 표기)을 구분해 담았습니다. 권역을 선택해 확인하세요.
         </div>
         
         <div style="display: grid; grid-template-columns: 240px 1fr; gap: 20px;">
@@ -1247,7 +1288,7 @@
           <div class="guide-card">
             <h4>1. 산업 용수 역산 메커니즘 (Industrial Water Back-Calculation)</h4>
             <p style="margin-bottom: 12px;">
-              기업의 투자 유치금액을 기준으로 반도체 생산 용수를 도출하기 위해, 물리학적 질량 수지(Mass Balance) 공식을 임베딩하였습니다.
+              기업의 투자 금액에서 반도체 생산 용수를 역산하기 위해 질량 수지(Mass Balance) 방식으로 계산합니다.
             </p>
             <div class="math-formula">
               N_fabs = Investment_Total / Average_Fab_Cost
@@ -1295,16 +1336,18 @@
     <footer>
       <div style="max-width:1100px; margin:0 auto 18px; text-align:left; font-size:0.78rem; line-height:1.6; color:#94a3b8;">
         <div style="font-weight:700; color:#cbd5e1; margin-bottom:6px;">출처 및 데이터 근거 (Sources)</div>
-        <div>[1] 화천댐 76.2만 톤·통합용수공급사업(107.2만 톤/일, 1·2단계, 2.2조 원): 기후에너지환경부, "용인 반도체 클러스터 용수 공급 사업 본격화" 보도자료. me.go.kr</div>
-        <div>[2] 용인 총 필요량 약 133만 톤/일 및 하수 재이용수 23만 톤(전체의 22%, 2030년까지): 산업통상자원부 클러스터 인프라 구축 협약(2024.11) / 헤럴드경제(2025.4.16), 한국수자원공사</div>
-        <div>[3] 팹 1기당 취수 원단위 약 13.7만 톤/일: 아시아경제(2026.6.30) "800조 호남 반도체 클러스터 물 부족 우려" 정부·산업계 인용</div>
-        <div>[4] 기후대응댐 후보지 14곳(다목적 3·홍수조절 7·용수전용 4, 연간 2.5억 톤 공급능력): 환경부 "기후대응댐 후보지(안) 14곳 발표" 보도자료(2024.7.30)</div>
-        <div>[5] 수도법 제7조(상수원보호구역 지정 등): 국가법령정보센터. law.go.kr</div>
-        <div>[6] 국가 공업용수 수급 전망(2040년 수요 804.8만 톤·부족 약 55만 톤): 기후에너지환경부 국가수도기본계획(2025.12). 용인 투자액: SK하이닉스 약 600조·삼성전자 약 360조</div>
-        <div style="margin-top:8px; color:#64748b; font-style:italic;">※ 본 시뮬레이터는 정책 이해용 모델이며, 슬라이더 기본값 중 일부(팹당 소비 원단위, 권역별 배정량, 투자액)는 실측이 아닌 시나리오 가정값입니다. 실제 정부 공식 수치는 위 출처를 따릅니다.</div>
+        <div>[1] 화천댐 76.2만 톤·통합용수공급사업(107.2만 톤/일, 1·2단계, 2.2조 원): <a href="https://www.korea.kr/briefing/pressReleaseView.do?newsId=156689277" target="_blank" rel="noopener" style="color:#7dd3fc;">기후에너지환경부 보도자료 "용인 반도체 클러스터 용수 공급 사업 본격화" (대한민국 정책브리핑)</a></div>
+        <div>[2] 용인 총 필요량 약 133만 톤/일: <a href="https://news.sbs.co.kr/news/endPage.do?news_id=N1007888900" target="_blank" rel="noopener" style="color:#7dd3fc;">SBS(2024.11.27) "용인 반도체 클러스터에 전력 10GW·용수 133만 톤 공급"</a> · 하수 재이용수 23만 톤(전체의 22%): <a href="https://biz.heraldcorp.com/article/10466253" target="_blank" rel="noopener" style="color:#7dd3fc;">헤럴드경제 "용인 반도체 클러스터에 '하수 재이용수'로 안정적 용수 공급"</a></div>
+        <div>[3] 팹 1기당 취수 원단위 약 13.7만 톤/일·서남권 800조 투자: <a href="https://www.asiae.co.kr/article/economic-general/2026063010401436577" target="_blank" rel="noopener" style="color:#7dd3fc;">아시아경제(2026.6.30) "800조 호남 반도체 클러스터 '물 부족' 우려…정부 '공급 문제없다'"</a></div>
+        <div>[4] 기후대응댐 후보지 14곳(다목적 3·홍수조절 7·용수전용 4, 연간 2.5억 톤 공급능력): <a href="https://www.korea.kr/news/policyNewsView.do?newsId=156643945" target="_blank" rel="noopener" style="color:#7dd3fc;">환경부 발표(2024.7.30, 대한민국 정책브리핑)</a></div>
+        <div>[5] 수도법 제7조(상수원보호구역 지정 등): <a href="https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EC%88%98%EB%8F%84%EB%B2%95" target="_blank" rel="noopener" style="color:#7dd3fc;">국가법령정보센터 수도법</a></div>
+        <div>[6] 2040년 공업용수 수요 804.8만 톤·공급 749.8만 톤(약 55만 톤 부족): 기후에너지환경부 국가수도기본계획 부분변경(2025.12) — <a href="https://www.busan.com/view/busan/view.php?code=2025121412190144754" target="_blank" rel="noopener" style="color:#7dd3fc;">부산일보(2025.12.14)</a> · <a href="https://m.ekn.kr/view.php?key=20251214021307787" target="_blank" rel="noopener" style="color:#7dd3fc;">에너지경제</a>. 용인 투자액: SK하이닉스 약 600조·삼성전자 약 360조</div>
+        <div>[7] 서남권 반도체 클러스터 용수 필요량 65만 톤/일: <a href="https://biz.heraldcorp.com/article/10793026" target="_blank" rel="noopener" style="color:#7dd3fc;">헤럴드경제(2026.6.30) "서남권 반도체에 전력 6.3GW, 용수 65만톤 필요"</a></div>
+        <div>[8] 정부 서남권 용수 확보 방안(동복댐 30만 톤·장흥댐 10만 톤 등): <a href="https://segye.com/newsView/20260630513352" target="_blank" rel="noopener" style="color:#7dd3fc;">세계일보(2026.6.30)</a></div>
+        <div style="margin-top:8px; color:#64748b; font-style:italic;">※ 본 시뮬레이터는 정책 이해용 모델입니다. "모델 가정값"·"시나리오 가정값"으로 표기한 수치(팹당 소비 원단위, 기본 공급망 총량, 권역별 배정량, 댐·보별 공급량 등)는 실측이 아니며, 실제 정부 공식 수치는 위 출처를 따릅니다.</div>
       </div>
-      대한민국 기후에너지환경부 · 국토교통부 · 한국수자원공사(K-water) 정책 이해용 시뮬레이터 (비공식)<br>
-      © 2026 국가 메가프로젝트 전국 수자원 수급 안보 시뮬레이션 시스템.
+      본 페이지는 공개 자료를 근거로 만든 정책 이해용 시뮬레이터이며, 정부 기관과 무관합니다.<br>
+      © 2026 Water Security Simulator
     </footer>
 
   </div>
@@ -1326,7 +1369,7 @@
       },
       chungcheongHub: {
         title: "충청권 (이차전지/바이오 클러스터)",
-        demand: "일 40.0만 톤 (청주, 오창, 천안 거점 합산)",
+        demand: "일 40.0만 톤 (청주, 오창, 천안 거점 합산 · 시나리오 가정값)",
         sources: "충주댐, 대청댐 및 인근 하수 처리수 재이용",
         risk: "대청댐 환경정화구역 및 상수원 보호구역 인접으로 인한 방류수 농도 추가 완충 필요",
         law: "금강수계 물관리 및 주민지원 등에 관한 법률, 수질보전 특별대책지역 지정 고시",
@@ -1335,21 +1378,21 @@
       },
       honamHub: {
         title: "서남권 (호남 AI 및 첨단 농생명 허브)",
-        demand: "일 30.0만 톤 (주암댐 수계 거점)",
-        sources: "주암댐, 동복호 및 하구둑 해수담수화/재이용 수단",
+        demand: "일 65.0만 톤 (서남권 반도체 클러스터 조성 시, 정부·업계 언급) [7]",
+        sources: "주암댐 수계 + 정부 확보 방안: 동복댐 30만 톤·장흥댐 10만 톤 등 [8]",
         risk: "갈수기 주암댐 고갈 빈도 급증으로 가뭄에 가장 취약한 도수 인프라 리스크",
         law: "영산강·섬진강수계 물관리 및 주민지원 등에 관한 법률",
         tag: "주암댐 저수위 도달에 따른 공업용수 제한 리스크",
-        desc: "호남권 AI 반도체 및 국가전략산단은 국내에서 가뭄 주기가 가장 빠르게 짧아지고 있는 섬진강/주암댐 계통에 수급을 의존하고 있습니다. 주암댐 저수율이 10%대로 떨어질 경우, 순천/광양 공업용수와 광주 생활용수가 충돌하게 됩니다. 이에 따라 영산강 수계 하수 고도 재이용망 및 기후대응 신설댐(호남권 신설댐 수혜 포함)의 진도율이 서남권 물 안보 여유량을 가르는 결정적 요인이 됩니다."
+        desc: "서남권 반도체 클러스터 조성 시 하루 약 65만 톤의 공업용수가 필요한 것으로 정부·업계에서 언급되고 있으며 [7], 정부는 동복댐 30만 톤·장흥댐 10만 톤 등 확보 방안을 공개했습니다 [8]. 다만 호남권은 국내에서 가뭄 주기가 가장 빠르게 짧아지는 섬진강/주암댐 계통에 수급을 의존하고 있어, 주암댐 저수율이 10%대로 떨어지면 순천/광양 공업용수와 광주 생활용수가 충돌합니다. 하수 고도 재이용망과 기후대응 신설댐의 진도율이 서남권 물 안보 여유량을 가르는 결정적 요인입니다."
       },
       yeongnamHub: {
         title: "영남권 (미래 모빌리티 및 AI 로봇 단지)",
-        demand: "일 50.0만 톤 (대구·울산·창원 국가전략산단)",
+        demand: "일 50.0만 톤 (대구·울산·창원 국가전략산단 · 시나리오 가정값)",
         sources: "안동댐, 합천댐, 낙동강 본류 고도 정화수",
         risk: "낙동강 수계 미량 유해물질 유입에 따른 공업용 정밀 정수비용 급증 리스크",
         law: "낙동강수계 물관리 및 주민지원 등에 관한 법률, 하천법",
         tag: "낙동강 취수원 다변화 및 맑은물 상생 협정",
-        desc: "영산강/낙동강 권역 중 영남 첨단 산업 벨트는 낙동강 본류 수질 사고 시 공업용수 품질 확보에 위기가 발생합니다. 초순수 팹 공정 원료 확보를 위해 상류 안동댐 직도수망 검토와 울산 해수담수화 설비의 연계가 요구됩니다. 기후대응댐 신설 대책 중 낙동강 유역 지류 댐들이 적기에 가동될 때 유량 안보 및 희석 유량이 보장되어 수질 안전 리스크를 최소화할 수 있습니다."
+        desc: "낙동강 권역의 영남 첨단 산업 벨트는 낙동강 본류 수질 사고 시 공업용수 품질 확보에 위기가 발생합니다. 초순수 팹 공정 원료 확보를 위해 상류 안동댐 직도수망 검토와 울산 해수담수화 설비의 연계가 요구됩니다. 기후대응댐 신설 대책 중 낙동강 유역 지류 댐들이 적기에 가동될 때 유량 안보 및 희석 유량이 보장되어 수질 안전 리스크를 최소화할 수 있습니다."
       },
       hwacheon: {
         title: "화천댐 (북한강 수계 - 발전방류수 다목적 전환원)",
@@ -1362,16 +1405,16 @@
       },
       soyanggang: {
         title: "소양강댐 (북한강 지류 - 국내 최대 다목적 댐)",
-        supply: "일 120.0만 톤 수준 (한강 수계 용량 조절 핵심)",
+        supply: "일 120.0만 톤 수준 (한강 수계 용량 조절 핵심 · 모델 가정값)",
         destinations: "수도권 생활용수 및 한강 본류 환경유량 보존",
         risk: "기후변화로 인한 강수량 불균형으로 역대 최저 저수위 도달 시 방류 차단 가능성",
         law: "댐건설관리법 및 상수원 수질 관리 조례",
         tag: "한강 수계 최대 저수 인프라",
-        desc: "소양강댐은 대한민국에서 가장 큰 사력댐으로 한강 수계의 전체 수량을 통제하고 기후 변화 가뭄 시기에 팔당댐 하류의 방류 유량을 유지하는 가장 거대한 수자원 최후의 방어선입니다."
+        desc: "소양강댐은 대한민국에서 가장 큰 사력댐으로 한강 수계의 전체 수량을 통제하고 기후 변화 가뭄 시기에 팔당댐 하류의 방류 유량을 유지하는 핵심 수자원 인프라입니다."
       },
       paldang: {
         title: "팔당댐 (한강 본류 - 수도권 공업용수 심장부)",
-        supply: "일 100.0만 톤 이상 (수도권 동부 최대 하천 취수 거점)",
+        supply: "일 100.0만 톤 이상 (수도권 동부 최대 하천 취수 거점 · 모델 가정값)",
         destinations: "서울/경인 생활용수, 삼성 평택 캠퍼스 및 용인 반도체 클러스터 기초 용수",
         risk: "기존 가용량이 한계에 달해 추가 공급 여유가 고갈되었으며, 극심한 가뭄 시 수계 전체 위기 확산 우려",
         law: "수질보전 특별대책지역 지정 고시 제1권역, 한강수계 관리법",
@@ -1380,16 +1423,16 @@
       },
       chungju: {
         title: "충주댐 (남한강 수계 - 기후대응 예비 보완원)",
-        supply: "일 40.0만 톤 수준 연계 계획 (댐 신설 및 연계망 확보 시)",
+        supply: "일 40.0만 톤 수준 연계 계획 (댐 신설 및 연계망 확보 시 · 모델 가정값)",
         destinations: "남한강 수계 하류 보충 및 용인 반도체 클러스터 비상 백업 공급망",
         risk: "남한강 수계 주변 시·군의 가뭄 발생 시 지역 배분 우선순위 갈등 리스크",
         law: "댐건설관리법, 상수원 특별대책지역 고시",
         tag: "기후대응 14개소 신설댐 보완 수혜 거점",
-        desc: "충주댐은 대한민국 최대의 다목적 댐으로 한강 수계의 안정성을 담당합니다. 기후대응 댐 14곳 신설 계획이 가동될 때 발생하는 여유 수량을 남한강 계통을 통해 용인 클러스터와 충청권 북부로 유입할 수 있는 복선 배관망이 계획되어 있습니다."
+        desc: "충주댐은 국내 최대 규모의 콘크리트 중력식 다목적댐으로 한강 수계의 안정성을 담당합니다. 기후대응 댐 14곳 신설 계획이 가동될 때 발생하는 여유 수량을 남한강 계통을 통해 용인 클러스터와 충청권 북부로 유입할 수 있는 복선 배관망이 계획되어 있습니다."
       },
       daecheong: {
         title: "대청댐 (금강 수계 - 충청 첨단 벨트 공급원)",
-        supply: "일 40.0만 톤 (금강 수계 가용 취수 배정)",
+        supply: "일 40.0만 톤 (금강 수계 가용 취수 배정 · 모델 가정값)",
         destinations: "대전, 청주 오송 바이오 벨트 및 오창 이차전지 산업단지",
         risk: "대청호 수질 특별대책지역 내에 위치해 있어 방류 오염물질에 대한 환경 단체의 엄격한 감시 및 규제",
         law: "금강수계 물관리 및 주민지원 등에 관한 법률, 상수원 보호법",
@@ -1398,16 +1441,16 @@
       },
       yongdam: {
         title: "용담댐 (금강 상류 - 대청호 비상 보충원)",
-        supply: "일 30.0만 톤 (금강 유역 수량 보완용)",
+        supply: "일 30.0만 톤 (금강 유역 수량 보완용 · 모델 가정값)",
         destinations: "금강 본류 방류 지원 및 충청 첨단 산단 간접 지원",
         risk: "가뭄 시 도수 터널 용량 제한 및 하류 전북 지역과의 수량 배분 갈등 리스크",
         law: "하천법 및 금강 수계 공동 운영 협정",
         tag: "금강 유역 최상류 예비 댐",
-        desc: "용담댐은 금강 최상류에 위치하여 대청댐 유량이 감소할 때 보조 물줄기를 방류해 금강 수계의 수위를 유지해 주는 든든한 백업 역할을 담당합니다."
+        desc: "용담댐은 금강 최상류에 위치하여 대청댐 유량이 감소할 때 보조 물줄기를 방류해 금강 수계의 수위를 유지하는 예비 수원 역할을 합니다."
       },
       andong: {
         title: "안동댐 (낙동강 수계 상류 - 영남권 수질 안전망)",
-        supply: "일 50.0만 톤 (낙동강 상류 청정 수계 공급 예비량)",
+        supply: "일 50.0만 톤 (낙동강 상류 청정 수계 공급 예비량 · 모델 가정값)",
         destinations: "대구·울산·창원 국가전략산단 및 미래 모빌리티 벨트",
         risk: "낙동강 하류 본류의 미량 유해물질 유출 사고 우회를 위한 상류 직도수망 구축 비용 갈등",
         law: "낙동강수계법, 하천법 및 상수원 특별법",
@@ -1416,7 +1459,7 @@
       },
       imha: {
         title: "임하댐 (낙동강 지류 - 안동-임하 통합 용수원)",
-        supply: "일 40.0만 톤 통합 연계 (안동댐 연결 도수망 확보 시)",
+        supply: "일 40.0만 톤 통합 연계 (안동댐 연결 도수망 확보 시 · 모델 가정값)",
         destinations: "낙동강 본류 수질 보완 및 대구/경북 공업 벨트",
         risk: "유입 토사량이 많아 가뭄 직후 강수 발생 시 탁수 방류 장기화 우려",
         law: "낙동강수계법 및 댐연계운영 지침",
@@ -1425,7 +1468,7 @@
       },
       hapcheon: {
         title: "합천댐 (황강 수계 - 영남 수질사고 백업원)",
-        supply: "일 35.0만 톤 가량 취수 다변화 (황강 광역도수망 건설 시)",
+        supply: "일 35.0만 톤 가량 취수 다변화 (황강 광역도수망 건설 시 · 모델 가정값)",
         destinations: "부산/경남 및 영남 첨단 모빌리티 산단 대체 취수",
         risk: "황강 유역 농업 단지 주민들의 지하수 수위 저하 우려 및 방류 취수 반대 민원",
         law: "낙동강 취수원 다변화 특별 협정 법안",
@@ -1434,7 +1477,7 @@
       },
       juam: {
         title: "주암댐 (섬진강 수계 - 호남 공업 용수 기지)",
-        supply: "일 30.0만 톤 (서남권 AI 및 광양만권 전략산업 공급)",
+        supply: "일 30.0만 톤 (서남권 AI 및 광양만권 전략산업 공급 · 모델 가정값)",
         destinations: "호남 AI 허브, 여수/광양 석유화학 및 철강 산단",
         risk: "남부지방 극심한 가뭄 발생 시 빈번한 저수위 고갈 현상 및 제한 급수 우려",
         law: "영산강·섬진강수계법, 환경부 상수원보호 조례",
@@ -1443,7 +1486,7 @@
       },
       yeojubo: {
         title: "여주보 (한강 본류 - 수도권 용수 수위 조절 보)",
-        supply: "총 저수용량 약 1,300만 톤 규모의 상시 수위 유지",
+        supply: "총 저수용량 약 1,300만 톤 규모의 상시 수위 유지 (모델 가정값)",
         destinations: "여주/이천 반도체 공업 배후단지 및 하류 팔당댐 유량 조절",
         risk: "보 개방 수위 변경 정책에 따른 하천 유량 변화 및 농업/공업 지하수 취수 제한 리스크",
         law: "하천법 및 보 연계 운영 가이드라인",
@@ -1452,7 +1495,7 @@
       },
       sejongbo: {
         title: "세종·공주보 (금강 본류 - 세종/충남 용수 보완 보)",
-        supply: "총 저수용량 약 800만 톤 규모의 상량 조절",
+        supply: "총 저수용량 약 800만 톤 규모의 수량 조절 (모델 가정값)",
         destinations: "세종 국가시범도시 스마트 워터넷 및 금강 유역 중류 공업용수",
         risk: "수질 및 하천 환경 단체의 보 상시 개방 압박과 가뭄 시기 담수 확보 필요성의 대립",
         law: "금강수계법 및 물관리 위원회 가동 가이드",
@@ -1461,7 +1504,7 @@
       },
       gangjeongbo: {
         title: "강정고령보 (낙동강 본류 - 대구/영남 최대 수량 완충 보)",
-        supply: "총 저수용량 약 2,500만 톤 규모의 최대 유역 저류",
+        supply: "총 저수용량 약 2,500만 톤 규모의 최대 유역 저류 (모델 가정값)",
         destinations: "대구 성서 산업단지 및 낙동강 하류 구미/창원 비상 도수망 지원",
         risk: "여름철 보 주변 유속 저하에 따른 녹조 발생으로 정수 정밀 비용 가중 위험",
         law: "낙동강 수계 가뭄 대응 보 연계 운영 지침",
@@ -1470,7 +1513,7 @@
       },
       seungchonbo: {
         title: "승촌보 (영산강 본류 - 호남 수계 비상 수위 조절 보)",
-        supply: "총 저수용량 약 900만 톤 규모의 담수 및 방류 조절",
+        supply: "총 저수용량 약 900만 톤 규모의 담수 및 방류 조절 (모델 가정값)",
         destinations: "광주/나주 인근 혁신도시 첨단 산단 및 주변 배후 농공 단지",
         risk: "영산강 수질 정화율 하락 시 본류 공업 취수 수원의 유해물질 필터링 비용 가중",
         law: "영산강·섬진강수계법 및 비상 취수 조례",
@@ -1638,14 +1681,15 @@
       // 3. System totals: Demand & Supply Matcher
       // Demand side: Yongin Cluster Demand + fixed regional demands
       const regionalDemands = state.scenario === 'current' ? {
-        chungcheong: 150000, // 15만 톤/일 (기초 수급)
-        honam: 80000,        // 8만 톤/일 (기초 수급)
-        yeongnam: 250000     // 25만 톤/일 (기초 수급)
+        chungcheong: 150000, // 15만 톤/일 (기초 수급, 시나리오 가정값)
+        honam: 80000,        // 8만 톤/일 (기초 수급, 시나리오 가정값)
+        yeongnam: 250000     // 25만 톤/일 (기초 수급, 시나리오 가정값)
       } : {
-        chungcheong: 400000, // 40만 톤/일 (미래 첨단 산단 완공)
-        honam: 300000,       // 30만 톤/일 (미래 AI 허브 완공)
-        yeongnam: 500000     // 50만 톤/일 (미래 모빌리티 완공)
+        chungcheong: 400000, // 40만 톤/일 (미래 첨단 산단 완공, 시나리오 가정값)
+        honam: 650000,       // 65만 톤/일 (서남권 반도체 클러스터 정부·업계 언급치 [7])
+        yeongnam: 500000     // 50만 톤/일 (미래 모빌리티 완공, 시나리오 가정값)
       };
+      state.regionalDemands = regionalDemands;
       state.totalDemandTons = state.yonginDemandTons + regionalDemands.chungcheong + regionalDemands.honam + regionalDemands.yeongnam;
 
       // Supply side: Base Supply (1.0 Million tons) + policy measures
@@ -1659,6 +1703,7 @@
       const reuseSupply = reuseMaxTons * (state.slideReuseVal / 100);
 
       state.totalSupplyTons = Math.round(baseSupplyTons + hwacheonSupply + damsSupply + reuseSupply);
+      state.supplyParts = { base: baseSupplyTons, dams: damsSupply, hwacheon: hwacheonSupply, reuse: reuseSupply };
       state.netBalanceTons = state.totalSupplyTons - state.totalDemandTons;
       state.sufficiencyRate = Math.round((state.totalSupplyTons / state.totalDemandTons) * 100);
 
@@ -1709,6 +1754,69 @@
         outputs.cardBalance.classList.add("danger");
         outputs.cardSecurityIndex.classList.add("danger");
       }
+
+      updateBalanceBar();
+    }
+
+    // --------------------------------------------------
+    // SUPPLY-DEMAND BALANCE BARS
+    // 색상은 dataviz 검증기(validate_palette.js) 통과 조합.
+    // 세그먼트 간 2px 간격 + 직접 라벨 + title 툴팁으로 식별 보강.
+    // --------------------------------------------------
+    const BALANCE_SEGMENTS = {
+      demand: [
+        { key: 'yongin', name: '용인 클러스터', color: '#d55181' },
+        { key: 'chungcheong', name: '충청권', color: '#c98500' },
+        { key: 'honam', name: '서남권(호남)', color: '#9085e9' },
+        { key: 'yeongnam', name: '영남권', color: '#d95926' }
+      ],
+      supply: [
+        { key: 'base', name: '기본 공급망', color: '#6d7fc9' },
+        { key: 'dams', name: '기후대응댐 신설', color: '#059669' },
+        { key: 'hwacheon', name: '화천댐 전환', color: '#0284c7' },
+        { key: 'reuse', name: '하수 재이용', color: '#a855f7' }
+      ]
+    };
+
+    function renderBalanceLegend() {
+      const chips = list => list.map(s => `<span><span class="chip" style="background:${s.color}"></span>${s.name}</span>`).join('');
+      document.getElementById('balance-legend').innerHTML =
+        `<span style="color:#cbd5e1;font-weight:600;">수요</span>${chips(BALANCE_SEGMENTS.demand)}` +
+        `<span style="color:#cbd5e1;font-weight:600;margin-left:10px;">공급</span>${chips(BALANCE_SEGMENTS.supply)}`;
+    }
+
+    function updateBalanceBar() {
+      const track = id => document.getElementById(id);
+      if (!track('bar-demand')) return;
+
+      const demandParts = {
+        yongin: state.yonginDemandTons,
+        chungcheong: state.regionalDemands.chungcheong,
+        honam: state.regionalDemands.honam,
+        yeongnam: state.regionalDemands.yeongnam
+      };
+      const maxTotal = Math.max(state.totalDemandTons, state.totalSupplyTons, 1);
+
+      const render = (id, defs, parts) => {
+        track(id).innerHTML = defs.map(seg => {
+          const tons = parts[seg.key] || 0;
+          const pct = tons / maxTotal * 100;
+          const tip = `${seg.name} ${(tons / 10000).toFixed(1)}만 톤/일`;
+          const label = pct > 11 ? `${(tons / 10000).toFixed(0)}` : '';
+          return `<div class="balance-seg" style="width:${pct}%;background:${seg.color};" title="${tip}">${label}</div>`;
+        }).join('');
+      };
+      render('bar-demand', BALANCE_SEGMENTS.demand, demandParts);
+      render('bar-supply', BALANCE_SEGMENTS.supply, state.supplyParts);
+
+      document.getElementById('bar-demand-total').innerText = `${Math.round(state.totalDemandTons / 10000).toLocaleString()} 만 톤/일`;
+      document.getElementById('bar-supply-total').innerText = `${Math.round(state.totalSupplyTons / 10000).toLocaleString()} 만 톤/일`;
+
+      const note = document.getElementById('balance-gap-note');
+      const gapMan = Math.round(state.netBalanceTons / 10000);
+      note.innerHTML = state.netBalanceTons >= 0
+        ? `<span class="status-pill safe">공급 여유 +${gapMan.toLocaleString()}만 톤/일</span>`
+        : `<span class="status-pill danger">공급 부족 ${gapMan.toLocaleString()}만 톤/일</span>`;
     }
 
     // --------------------------------------------------
@@ -2394,11 +2502,11 @@
       updateCalculations();
     });
 
-    // Particle flow toggle button
-    document.getElementById('btn-toggle-particles').addEventListener('click', () => {
+    // 관로 흐름 애니메이션 토글 (지도 위 파선 흐름)
+    document.getElementById('btn-toggle-particles').addEventListener('click', function() {
       state.animateFlow = !state.animateFlow;
-      const btn = document.getElementById('btn-toggle-particles');
-      btn.innerText = state.animateFlow ? "파티클 토글" : "파티클 토글";
+      this.classList.toggle('active', state.animateFlow);
+      document.body.classList.toggle('no-route-flow', !state.animateFlow);
     });
 
     document.getElementById('btn-toggle-military').addEventListener('click', function() {
@@ -2460,10 +2568,12 @@
 
     // Window Load Initialization
     window.addEventListener('load', () => {
+      renderBalanceLegend();
       updateCalculations();
-      animate(); // Start animation loop
+      // 캔버스 지도는 숨김 상태(Leaflet 실지도 사용) — 보일 때만 그려 CPU 낭비를 막는다
+      if (canvas.offsetParent) animate();
       initRealMap();
-      
+
       // Default loaded fact check
       showFact('yongin', document.getElementById('btn-fact-yongin'));
     });
